@@ -260,7 +260,7 @@ jobs:
       - name: Normalize artifact filename
         shell: bash
         run: |
-          CANONICAL_ZIP_PATH="${WIN_OUT_DIR}/InsightStream-goose-windows-x64.zip"
+          CANONICAL_ZIP_PATH="${GITHUB_WORKSPACE}/InsightStream-goose-windows-x64.zip"
           cp "${ZIP_PATH}" "${CANONICAL_ZIP_PATH}"
           echo "CANONICAL_ZIP_PATH=${CANONICAL_ZIP_PATH}" >> "$GITHUB_ENV"
 
@@ -269,3 +269,4 @@ jobs:
         with:
           name: InsightStream-goose-windows-x64
           path: ${{ env.CANONICAL_ZIP_PATH }}
+          if-no-files-found: error

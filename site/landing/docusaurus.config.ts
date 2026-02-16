@@ -9,7 +9,7 @@ const baseUrl = process.env.LANDING_BASE_URL ?? `/${landingGhRepo}/`;
 const config: Config = {
   title: "InsightStream",
   tagline: "RPA-агент для повседневной работы на компьютере",
-  favicon: "brand/favicon-placeholder.svg",
+  favicon: "brand/favicon.ico",
 
   url: process.env.LANDING_SITE_URL ?? `https://${landingGhOwner}.github.io`,
   baseUrl,
@@ -54,12 +54,13 @@ const config: Config = {
   ],
 
   themeConfig: {
-    image: "brand/og-placeholder.svg",
+    image: "brand/logo_light.png",
     navbar: {
       title: "InsightStream",
       logo: {
         alt: "InsightStream",
-        src: "brand/logo-placeholder.svg"
+        src: "brand/logo_light.png",
+        srcDark: "brand/logo_dark.png"
       },
       items: [
         { to: "/#features", label: "Возможности", position: "left" },

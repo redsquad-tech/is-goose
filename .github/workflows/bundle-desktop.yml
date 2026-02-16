@@ -299,6 +299,7 @@ jobs:
         with:
           name: InsightStream-goose-macos-arm64
           path: ${{ env.CANONICAL_ZIP_PATH }}
+          if-no-files-found: error
 
       - name: Quick launch test (macOS)
         if: ${{ inputs.quick_test }}
