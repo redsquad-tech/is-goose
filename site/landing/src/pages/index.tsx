@@ -18,6 +18,20 @@ const CASES = [
   "Непонятно, с чего начать настройку -> агент даёт пошаговые действия -> быстрый запуск без техподготовки."
 ];
 
+const MOODBOARD = [
+  "Чистый светлый интерфейс с выразительным hero-блоком и акцентами глубоко-синего градиента.",
+  "Крупная типографика в заголовках, короткие формулировки и понятные CTA без перегруза.",
+  "Демонстрация продукта через реальные сценарии и карточки с чёткой пользой для бизнеса."
+];
+
+const COMPANY_SEGMENTS = [
+  "Консалтинг и агентства",
+  "Юридические и бухгалтерские фирмы",
+  "Продажи и клиентский сервис",
+  "Малые продуктовые команды",
+  "Операционные подразделения"
+];
+
 export default function Home(): JSX.Element {
   const { siteConfig } = useDocusaurusContext();
   const fields = (siteConfig.customFields ?? {}) as LandingFields;
@@ -34,7 +48,7 @@ export default function Home(): JSX.Element {
       description="InsightStream — десктоп-агент для предпринимателей и офисных команд. Скачайте демо и запросите ключ по email."
     >
       <main className={styles.page}>
-        <section id="hero" className="py-5">
+        <section id="hero" className={`py-5 ${styles.heroBand}`}>
           <div className={styles.fixedShell}>
             <div className="row g-4 align-items-stretch">
               <div className="col-lg-7">
@@ -65,6 +79,39 @@ export default function Home(): JSX.Element {
                   className={styles.heroImage}
                 />
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="moodboard" className="py-4">
+          <div className={styles.fixedShell}>
+            <h2 className="h3 mb-3">Визуальный ориентир лендинга</h2>
+            <div className="card shadow-sm border-0">
+              <div className="card-body">
+                <ul className="mb-3">
+                  {MOODBOARD.map((item) => (
+                    <li key={item} className="mb-2">
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-secondary mb-0">
+                  Для юридической чистоты используются только собственные тексты, структура и графические материалы проекта.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="companies" className="py-4">
+          <div className={styles.fixedShell}>
+            <h2 className="h3 mb-3">Для каких компаний подходит</h2>
+            <div className={styles.segmentGrid}>
+              {COMPANY_SEGMENTS.map((segment) => (
+                <span key={segment} className={styles.segmentPill}>
+                  {segment}
+                </span>
+              ))}
             </div>
           </div>
         </section>
@@ -174,6 +221,10 @@ export default function Home(): JSX.Element {
                 </aside>
               </div>
             </div>
+            <div className={`alert mt-3 mb-0 ${styles.riskAlert}`} role="alert">
+              <strong>Важно:</strong> функции ИИ требуют контроля со стороны пользователя. Не передавайте доступ к критичным
+              данным без проверки, используйте резервные копии и проверяйте результат перед применением.
+            </div>
           </div>
         </section>
 
@@ -231,7 +282,10 @@ export default function Home(): JSX.Element {
                 <article className="card h-100 shadow-sm border-0">
                   <div className="card-body">
                     <h3 className="h5">Это безопасно для файлов?</h3>
-                    <p className="mb-0">Рекомендуется начинать с копий важных данных и постепенно подключать рабочие папки.</p>
+                    <p className="mb-0">
+                      ИИ-инструменты могут ошибаться. Рекомендуется начинать с копий важных данных, ограничивать права доступа и
+                      проверять каждое критичное действие вручную.
+                    </p>
                   </div>
                 </article>
               </div>

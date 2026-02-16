@@ -2,6 +2,13 @@
   padding-bottom: 4rem;
 }
 
+.heroBand {
+  background:
+    radial-gradient(120% 140% at 10% 0%, rgba(46, 95, 199, 0.24) 0%, rgba(46, 95, 199, 0) 55%),
+    radial-gradient(90% 120% at 90% 20%, rgba(39, 162, 255, 0.16) 0%, rgba(39, 162, 255, 0) 60%),
+    linear-gradient(180deg, #f3f7ff 0%, #f7f8fa 100%);
+}
+
 .fixedShell {
   width: 1120px;
   max-width: calc(100% - 2rem);
@@ -44,6 +51,30 @@
 
 .note {
   color: #52606d;
+}
+
+.segmentGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.segmentPill {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #c9d6ea;
+  background: linear-gradient(180deg, #ffffff 0%, #f1f5fb 100%);
+  border-radius: 999px;
+  color: #163055;
+  font-size: 0.92rem;
+  font-weight: 600;
+  padding: 0.45rem 0.85rem;
+}
+
+.riskAlert {
+  border: 1px solid #f2cf9d;
+  background: linear-gradient(180deg, #fff8ed 0%, #fff2de 100%);
+  color: #513105;
 }
 
 @media (max-width: 992px) {
