@@ -41,9 +41,11 @@ debug_*.txt
 # Docs
 # Dependencies
 /node_modules
+/site/landing/node_modules
 
 # Production
 /build
+/site/landing/build
 
 # Generated files
 .docusaurus

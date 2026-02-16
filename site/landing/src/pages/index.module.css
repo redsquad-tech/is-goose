@@ -2,6 +2,11 @@
   padding-bottom: 4rem;
 }
 
+.page section {
+  padding-top: 3.2rem !important;
+  padding-bottom: 3.2rem !important;
+}
+
 .heroBand {
   background:
     radial-gradient(120% 140% at 10% 0%, rgba(46, 95, 199, 0.24) 0%, rgba(46, 95, 199, 0) 55%),
@@ -22,6 +27,28 @@
   border: 1px solid #d9e1e8;
   box-shadow: 0 8px 24px rgba(16, 32, 51, 0.08);
   background: #fff;
+}
+
+.photoGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.photoCard {
+  margin: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #d9e1e8;
+  box-shadow: 0 10px 26px rgba(16, 32, 51, 0.1);
+  background: #fff;
+}
+
+.photoCard img {
+  display: block;
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
 }
 
 .platformButton {
@@ -80,6 +107,19 @@
 @media (max-width: 992px) {
   .fixedShell {
     width: auto;
+  }
+
+  .page section {
+    padding-top: 2.4rem !important;
+    padding-bottom: 2.4rem !important;
+  }
+
+  .photoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .photoCard img {
+    height: 240px;
   }
 
   .platformButton {

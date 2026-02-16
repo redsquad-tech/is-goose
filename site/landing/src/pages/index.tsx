@@ -18,12 +18,6 @@ const CASES = [
   "Непонятно, с чего начать настройку -> агент даёт пошаговые действия -> быстрый запуск без техподготовки."
 ];
 
-const MOODBOARD = [
-  "Чистый светлый интерфейс с выразительным hero-блоком и акцентами глубоко-синего градиента.",
-  "Крупная типографика в заголовках, короткие формулировки и понятные CTA без перегруза.",
-  "Демонстрация продукта через реальные сценарии и карточки с чёткой пользой для бизнеса."
-];
-
 const COMPANY_SEGMENTS = [
   "Консалтинг и агентства",
   "Юридические и бухгалтерские фирмы",
@@ -38,6 +32,7 @@ export default function Home(): JSX.Element {
   const owner = fields.landingGhOwner ?? "redsquad-tech";
   const repo = fields.landingGhRepo ?? "is-goose";
   const email = fields.landingContactEmail ?? "bavadim@gmail.com";
+  const baseUrl = siteConfig.baseUrl ?? `/${repo}/`;
 
   const mailto = `mailto:${email}?subject=${encodeURIComponent("Запрос ключа InsightStream")}`;
   const downloadLinks = buildDownloadLinks(owner, repo);
@@ -74,7 +69,7 @@ export default function Home(): JSX.Element {
 
               <div className="col-lg-5">
                 <img
-                  src="/is-goose/illustrations/hero-workflow.svg"
+                  src={`${baseUrl}illustrations/hero-workflow.svg`}
                   alt="Схема работы InsightStream: скачать демо, использовать 3 дня, запросить ключ"
                   className={styles.heroImage}
                 />
@@ -83,23 +78,23 @@ export default function Home(): JSX.Element {
           </div>
         </section>
 
-        <section id="moodboard" className="py-4">
+        <section id="visual" className="py-4">
           <div className={styles.fixedShell}>
-            <h2 className="h3 mb-3">Визуальный ориентир лендинга</h2>
-            <div className="card shadow-sm border-0">
-              <div className="card-body">
-                <ul className="mb-3">
-                  {MOODBOARD.map((item) => (
-                    <li key={item} className="mb-2">
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-                <p className="text-secondary mb-0">
-                  Для юридической чистоты используются только собственные тексты, структура и графические материалы проекта.
-                </p>
-              </div>
+            <h2 className="h3 mb-3">InsightStream в рабочей среде</h2>
+            <div className={styles.photoGrid}>
+              <figure className={styles.photoCard}>
+                <img src={`${baseUrl}stock/workspace-docs.jpg`} alt="Рабочий стол с ноутбуком и документами" />
+              </figure>
+              <figure className={styles.photoCard}>
+                <img src={`${baseUrl}stock/workspace-glassdesk.jpg`} alt="Офисное рабочее место с задачами и заметками" />
+              </figure>
+              <figure className={styles.photoCard}>
+                <img src={`${baseUrl}stock/workspace-minimal.jpg`} alt="Минималистичное рабочее место с ноутбуком" />
+              </figure>
             </div>
+            <p className="text-secondary mt-2 mb-0 small">
+              Фото: Pexels (Thirdman, Arina Krasnikova, Darina Belonogova)
+            </p>
           </div>
         </section>
 
@@ -171,7 +166,7 @@ export default function Home(): JSX.Element {
               </div>
             </div>
             <img
-              src="/is-goose/illustrations/use-cases.svg"
+              src={`${baseUrl}illustrations/use-cases.svg`}
               alt="Иллюстрация типовых кейсов: файлы, поиск, документы"
               className={styles.casesImage}
             />
