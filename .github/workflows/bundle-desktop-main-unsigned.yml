@@ -3,7 +3,7 @@ name: Bundle Desktop Artifacts (Unsigned)
 on:
   push:
     branches:
-      - main
+      - distro
   workflow_dispatch:
 
 permissions:

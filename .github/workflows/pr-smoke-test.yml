@@ -125,7 +125,7 @@ jobs:
           HOME: /tmp/goose-home
           GOOSE_DISABLE_KEYRING: 1
           SKIP_BUILD: 1
-          SKIP_PROVIDERS: ${{ vars.SKIP_PROVIDERS || '' }}
+          SKIP_PROVIDERS: anthropic,google,claude-code,gemini-cli${{ vars.SKIP_PROVIDERS != '' && format(',{0}', vars.SKIP_PROVIDERS) || '' }}
         run: |
           # Ensure the HOME directory structure exists
           mkdir -p $HOME/.local/share/goose/sessions
@@ -143,6 +143,7 @@ jobs:
         uses: astral-sh/setup-uv@61cb8a9741eeb8a550a1b8544337180c0fc8476b  # v7.2.0
 
       - name: Run MCP Tests
+        if: ${{ secrets.ANTHROPIC_API_KEY != '' }}
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -159,6 +160,7 @@ jobs:
           bash scripts/test_mcp.sh
 
       - name: Run Subrecipe Tests
+        if: ${{ secrets.ANTHROPIC_API_KEY != '' }}
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GOOSE_PROVIDER: anthropic
@@ -201,7 +203,7 @@ jobs:
           HOME: /tmp/goose-home
           GOOSE_DISABLE_KEYRING: 1
           SKIP_BUILD: 1
-          SKIP_PROVIDERS: ${{ vars.SKIP_PROVIDERS || '' }}
+          SKIP_PROVIDERS: anthropic,google,claude-code,gemini-cli${{ vars.SKIP_PROVIDERS != '' && format(',{0}', vars.SKIP_PROVIDERS) || '' }}
         run: |
           mkdir -p $HOME/.local/share/goose/sessions
           mkdir -p $HOME/.config/goose
@@ -211,6 +213,7 @@ jobs:
     name: Compaction Tests
     runs-on: ubuntu-latest
     needs: build-binary
+    if: ${{ secrets.ANTHROPIC_API_KEY != '' }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
@@ -251,6 +254,7 @@ jobs:
     name: goose server HTTP integration tests
     runs-on: ubuntu-latest
     needs: build-binary
+    if: ${{ secrets.ANTHROPIC_API_KEY != '' }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1

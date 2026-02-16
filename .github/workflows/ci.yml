@@ -3,13 +3,13 @@ name: CI
 on:
   push:
     branches:
-      - main
+      - distro
   pull_request:
     branches:
-      - main
+      - distro
   merge_group:
     branches:
-      - main
+      - distro
   workflow_dispatch:
 
 jobs:
