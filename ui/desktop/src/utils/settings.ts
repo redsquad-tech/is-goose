@@ -17,6 +17,12 @@ export interface KeyboardShortcuts {
   alwaysOnTop: string | null;
 }
 
+export interface DistributionBootstrapState {
+  applied: boolean;
+  version: number;
+  appliedAt?: string;
+}
+
 export type DefaultKeyboardShortcuts = {
   [K in keyof KeyboardShortcuts]: string;
 };
@@ -29,6 +35,7 @@ export interface Settings {
   externalGoosed?: ExternalGoosedConfig;
   globalShortcut?: string | null;
   keyboardShortcuts?: KeyboardShortcuts;
+  distributionBootstrap?: Record<string, DistributionBootstrapState>;
 }
 
 export const defaultKeyboardShortcuts: DefaultKeyboardShortcuts = {

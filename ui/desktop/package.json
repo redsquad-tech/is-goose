@@ -1,8 +1,8 @@
 {
   "name": "goose-app",
-  "productName": "Goose",
+  "productName": "InsightStream goose",
   "version": "1.24.0",
-  "description": "Goose App",
+  "description": "InsightStream goose desktop app",
   "engines": {
     "node": "^24.10.0",
     "npm": "^11.6.1"
@@ -17,10 +17,10 @@
     "start:test-error": "GOOSE_TEST_ERROR=true electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
-    "bundle:default": "node scripts/prepare-platform-binaries.js && npm run make && (cd out/Goose-darwin-arm64 && ditto -c -k --sequesterRsrc --keepParent Goose.app Goose.zip) || echo 'out/Goose-darwin-arm64 not found; either the binary is not built or you are not on macOS'",
-    "bundle:alpha": "ALPHA=true node scripts/prepare-platform-binaries.js && ALPHA=true npm run make && (cd out/Goose-darwin-arm64 && ditto -c -k --sequesterRsrc --keepParent Goose.app Goose_alpha.zip) || echo 'out/Goose-darwin-arm64 not found; either the binary is not built or you are not on macOS'",
-    "bundle:intel": "node scripts/prepare-platform-binaries.js && npm run make -- --arch=x64 && cd out/Goose-darwin-x64 && ditto -c -k --sequesterRsrc --keepParent Goose.app Goose_intel_mac.zip",
-    "debug": "echo 'run --remote-debugging-port=8315' && lldb out/Goose-darwin-arm64/Goose.app",
+    "bundle:default": "node scripts/prepare-platform-binaries.js && npm run make && APP_DIR=$(find out -maxdepth 1 -type d -name '*-darwin-arm64' | head -n 1) && APP_BUNDLE=$(find \"$APP_DIR\" -maxdepth 1 -type d -name '*.app' | head -n 1) && if [ -n \"$APP_DIR\" ] && [ -n \"$APP_BUNDLE\" ]; then ditto -c -k --sequesterRsrc --keepParent \"$APP_BUNDLE\" \"$APP_DIR/InsightStream-goose.zip\"; else echo 'macOS bundle folder not found'; exit 1; fi",
+    "bundle:alpha": "ALPHA=true node scripts/prepare-platform-binaries.js && ALPHA=true npm run make && APP_DIR=$(find out -maxdepth 1 -type d -name '*-darwin-arm64' | head -n 1) && APP_BUNDLE=$(find \"$APP_DIR\" -maxdepth 1 -type d -name '*.app' | head -n 1) && if [ -n \"$APP_DIR\" ] && [ -n \"$APP_BUNDLE\" ]; then ditto -c -k --sequesterRsrc --keepParent \"$APP_BUNDLE\" \"$APP_DIR/InsightStream-goose_alpha.zip\"; else echo 'macOS bundle folder not found'; exit 1; fi",
+    "bundle:intel": "node scripts/prepare-platform-binaries.js && npm run make -- --arch=x64 && APP_DIR=$(find out -maxdepth 1 -type d -name '*-darwin-x64' | head -n 1) && APP_BUNDLE=$(find \"$APP_DIR\" -maxdepth 1 -type d -name '*.app' | head -n 1) && if [ -n \"$APP_DIR\" ] && [ -n \"$APP_BUNDLE\" ]; then ditto -c -k --sequesterRsrc --keepParent \"$APP_BUNDLE\" \"$APP_DIR/InsightStream-goose_intel_mac.zip\"; else echo 'macOS x64 bundle folder not found'; exit 1; fi",
+    "debug": "echo 'run --remote-debugging-port=8315' && APP_DIR=$(find out -maxdepth 1 -type d -name '*-darwin-arm64' | head -n 1) && APP_BUNDLE=$(find \"$APP_DIR\" -maxdepth 1 -type d -name '*.app' | head -n 1) && lldb \"$APP_BUNDLE\"",
     "test-e2e": "npm run generate-api && playwright test",
     "test-e2e:dev": "npm run generate-api && playwright test --reporter=list --retries=0 --max-failures=1",
     "test-e2e:ui": "npm run generate-api && playwright test --ui",

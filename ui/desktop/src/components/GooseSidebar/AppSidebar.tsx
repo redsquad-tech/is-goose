@@ -1,5 +1,5 @@
 import { AppEvents } from '../../constants/events';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   AppWindow,
   ChefHat,
@@ -33,6 +33,7 @@ import { useSidebarSessionStatus } from '../../hooks/useSidebarSessionStatus';
 import { getInitialWorkingDir } from '../../utils/workingDir';
 import { useConfig } from '../ConfigContext';
 import { InlineEditText } from '../common/InlineEditText';
+import { t } from '../../i18n';
 
 interface SidebarProps {
   onSelectSession: (sessionId: string) => void;
@@ -55,45 +56,6 @@ interface NavigationSeparator {
 }
 
 type NavigationEntry = NavigationItem | NavigationSeparator;
-
-const menuItems: NavigationEntry[] = [
-  {
-    type: 'item',
-    path: '/recipes',
-    label: 'Recipes',
-    icon: FileText,
-    tooltip: 'Browse your saved recipes',
-  },
-  {
-    type: 'item',
-    path: '/apps',
-    label: 'Apps',
-    icon: AppWindow,
-    tooltip: 'MCP and custom apps',
-  },
-  {
-    type: 'item',
-    path: '/schedules',
-    label: 'Scheduler',
-    icon: Clock,
-    tooltip: 'Manage scheduled runs',
-  },
-  {
-    type: 'item',
-    path: '/extensions',
-    label: 'Extensions',
-    icon: Puzzle,
-    tooltip: 'Manage your extensions',
-  },
-  { type: 'separator' },
-  {
-    type: 'item',
-    path: '/settings',
-    label: 'Settings',
-    icon: Gear,
-    tooltip: 'Configure Goose settings',
-  },
-];
 
 const getSessionDisplayName = (session: Session): string => {
   if (session.recipe?.title) {
@@ -236,6 +198,47 @@ const AppSidebar: React.FC<SidebarProps> = ({ currentPath }) => {
   const [searchParams] = useSearchParams();
   const [recentSessions, setRecentSessions] = useState<Session[]>([]);
   const [isChatExpanded, setIsChatExpanded] = useState(true);
+  const menuItems: NavigationEntry[] = useMemo(
+    () => [
+      {
+        type: 'item',
+        path: '/recipes',
+        label: t('ui.recipes', 'Recipes'),
+        icon: FileText,
+        tooltip: t('ui.recipes', 'Recipes'),
+      },
+      {
+        type: 'item',
+        path: '/apps',
+        label: t('ui.apps', 'Apps'),
+        icon: AppWindow,
+        tooltip: t('ui.apps', 'Apps'),
+      },
+      {
+        type: 'item',
+        path: '/schedules',
+        label: t('ui.scheduler', 'Scheduler'),
+        icon: Clock,
+        tooltip: t('ui.scheduler', 'Scheduler'),
+      },
+      {
+        type: 'item',
+        path: '/extensions',
+        label: t('ui.extensions', 'Extensions'),
+        icon: Puzzle,
+        tooltip: t('ui.extensions', 'Extensions'),
+      },
+      { type: 'separator' },
+      {
+        type: 'item',
+        path: '/settings',
+        label: t('ui.settings', 'Settings'),
+        icon: Gear,
+        tooltip: t('ui.settings', 'Settings'),
+      },
+    ],
+    []
+  );
   const activeSessionId = searchParams.get('resumeSessionId') ?? undefined;
   const { getSessionStatus, clearUnread } = useSidebarSessionStatus(activeSessionId);
 
@@ -396,7 +399,7 @@ const AppSidebar: React.FC<SidebarProps> = ({ currentPath }) => {
       (item) => item.type === 'item' && item.path === currentPath
     ) as NavigationItem | undefined;
 
-    const titleBits = ['Goose'];
+    const titleBits = [t('app.name', 'InsightStream goose')];
 
     if (
       currentPath === '/pair' &&
@@ -409,7 +412,7 @@ const AppSidebar: React.FC<SidebarProps> = ({ currentPath }) => {
     }
 
     document.title = titleBits.join(' - ');
-  }, [currentPath, chatContext?.chat?.name]);
+  }, [currentPath, chatContext?.chat?.name, menuItems]);
 
   const isActivePath = (path: string) => {
     return currentPath === path;
@@ -477,6 +480,7 @@ const AppSidebar: React.FC<SidebarProps> = ({ currentPath }) => {
     }
 
     const IconComponent = entry.icon;
+    const testIdLabel = entry.path.replace(/^\//, '').replace(/\//g, '-') || 'root';
 
     return (
       <SidebarGroup key={entry.path} className="px-2">
@@ -484,7 +488,7 @@ const AppSidebar: React.FC<SidebarProps> = ({ currentPath }) => {
           <div className="sidebar-item">
             <SidebarMenuItem>
               <SidebarMenuButton
-                data-testid={`sidebar-${entry.label.toLowerCase()}-button`}
+                data-testid={`sidebar-${testIdLabel}-button`}
                 onClick={() => navigate(entry.path)}
                 isActive={isActivePath(entry.path)}
                 tooltip={entry.tooltip}

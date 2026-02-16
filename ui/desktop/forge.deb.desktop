@@ -1,7 +1,7 @@
 [Desktop Entry]
-Name=Goose
-Exec=/usr/lib/goose/Goose %U
-Icon=/usr/share/pixmaps/goose.png
+Name=InsightStream goose
+Exec=/usr/lib/insightstream-goose/insightstream-goose %U
+Icon=/usr/share/pixmaps/insightstream-goose.png
 Terminal=false
 Type=Application
 Categories=Development;

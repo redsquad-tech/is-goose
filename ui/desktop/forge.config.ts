@@ -4,7 +4,7 @@ const { resolve } = require('path');
 
 let cfg = {
   asar: true,
-  extraResource: ['src/bin', 'src/images'],
+  extraResource: ['src/bin', 'src/images', 'src/distribution'],
   icon: 'src/images/icon',
   // Windows specific configuration
   win32: {
@@ -17,7 +17,7 @@ let cfg = {
   // Protocol registration
   protocols: [
     {
-      name: 'GooseProtocol',
+      name: 'InsightStreamProtocol',
       schemes: ['goose'],
     },
   ],
@@ -33,8 +33,10 @@ let cfg = {
       },
     ],
     // Usage descriptions for macOS TCC (Transparency, Consent, and Control)
-    NSCalendarsUsageDescription: 'Goose needs access to your calendars to help manage and query calendar events.',
-    NSRemindersUsageDescription: 'Goose needs access to your reminders to help manage and query reminders.',
+    NSCalendarsUsageDescription:
+      'InsightStream goose needs access to your calendars to help manage and query calendar events.',
+    NSRemindersUsageDescription:
+      'InsightStream goose needs access to your reminders to help manage and query reminders.',
   },
 };
 
@@ -68,8 +70,8 @@ module.exports = {
     {
       name: '@electron-forge/maker-deb',
       config: {
-        name: 'Goose',
-        bin: 'Goose',
+        name: 'insightstream-goose',
+        bin: 'insightstream-goose',
         maintainer: 'Block, Inc.',
         homepage: 'https://block.github.io/goose/',
         categories: ['Development'],
@@ -83,8 +85,8 @@ module.exports = {
     {
       name: '@electron-forge/maker-rpm',
       config: {
-        name: 'Goose',
-        bin: 'Goose',
+        name: 'insightstream-goose',
+        bin: 'insightstream-goose',
         maintainer: 'Block, Inc.',
         homepage: 'https://block.github.io/goose/',
         categories: ['Development'],
@@ -109,7 +111,7 @@ module.exports = {
           homepage: 'https://block.github.io/goose/',
           runtimeVersion: '25.08',
           baseVersion: '25.08',
-          bin: 'Goose',
+          bin: 'insightstream-goose',
           modules: [
             {
               name: 'libbz2-shim',

@@ -49,7 +49,7 @@ export class GitHubUpdater {
       const response = await fetch(this.apiUrl, {
         headers: {
           Accept: 'application/vnd.github.v3+json',
-          'User-Agent': `Goose-Desktop/${app.getVersion()}`,
+          'User-Agent': `InsightStream-goose/${app.getVersion()}`,
         },
         signal: controller.signal,
       });
@@ -103,16 +103,16 @@ export class GitHubUpdater {
       if (platform === 'darwin') {
         // macOS
         if (arch === 'arm64') {
-          assetName = 'Goose.zip';
+          assetName = 'InsightStream-goose.zip';
         } else {
-          assetName = 'Goose_intel_mac.zip';
+          assetName = 'InsightStream-goose_intel_mac.zip';
         }
       } else if (platform === 'win32') {
         // Windows - for future support
-        assetName = 'Goose-win32-x64.zip';
+        assetName = 'InsightStream-goose-win32-x64.zip';
       } else {
         // Linux - for future support
-        assetName = `Goose-linux-${arch}.zip`;
+        assetName = `InsightStream-goose-linux-${arch}.zip`;
       }
 
       log.info(`GitHubUpdater: Looking for asset named: ${assetName}`);
@@ -254,7 +254,7 @@ export class GitHubUpdater {
 
       // Save to Downloads directory
       const downloadsDir = path.join(os.homedir(), 'Downloads');
-      const fileName = `goose-${latestVersion}.zip`;
+      const fileName = `insightstream-goose-${latestVersion}.zip`;
       const downloadPath = path.join(downloadsDir, fileName);
 
       log.info(`GitHubUpdater: Writing file to ${downloadPath}...`);

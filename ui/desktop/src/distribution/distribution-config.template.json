@@ -1,0 +1,25 @@
+{
+  "distro_id": "insightstream_demo",
+  "distro_version": 1,
+  "bootstrap_enabled": true,
+  "branding": {
+    "app_name": "InsightStream goose",
+    "short_name": "InsightStream",
+    "protocol": "goose"
+  },
+  "locale": {
+    "default": "ru"
+  },
+  "provider": {
+    "id": "custom_compressa",
+    "display_name": "Compressa",
+    "engine": "openai",
+    "base_url": "https://openai.bavadim.xyz/v1/chat/completions",
+    "model": "gpt-5.2-codex",
+    "api_key_env": "COMPRESSA_API_KEY",
+    "api_key": "__INJECTED_BY_CI__",
+    "supports_streaming": true,
+    "requires_auth": true,
+    "context_limit": 128000
+  }
+}

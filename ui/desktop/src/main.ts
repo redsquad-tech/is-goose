@@ -48,6 +48,9 @@ import { Client } from './api/client';
 import { GooseApp } from './api';
 import installExtension, { REACT_DEVELOPER_TOOLS } from 'electron-devtools-installer';
 import { BLOCKED_PROTOCOLS, WEB_PROTOCOLS } from './utils/urlSecurity';
+import { applyDistributionBootstrap } from './distribution/bootstrap';
+import { loadDistributionConfig } from './distribution/loadDistributionConfig';
+import { setRuntimeLocale, t } from './i18n';
 
 function shouldSetupUpdater(): boolean {
   // Setup updater if either the flag is enabled OR dev updates are enabled
@@ -329,7 +332,7 @@ app.on('open-url', async (_event, url) => {
 app.on('will-finish-launching', () => {
   if (process.platform === 'darwin') {
     app.setAboutPanelOptions({
-      applicationName: 'Goose',
+      applicationName: appName,
       applicationVersion: app.getVersion(),
     });
   }
@@ -384,8 +387,8 @@ async function handleFileOpen(filePath: string) {
 
     // Show user-friendly error notification
     new Notification({
-      title: 'Goose',
-      body: `Could not open directory: ${path.basename(filePath)}`,
+      title: appName,
+      body: `${t('error.open_directory', 'Could not open directory')}: ${path.basename(filePath)}`,
     }).show();
   }
 }
@@ -438,6 +441,11 @@ const getBundledConfig = (): BundledConfig => {
 
 const { defaultProvider, defaultModel, predefinedModels, baseUrlShare, version } =
   getBundledConfig();
+const distributionConfig = loadDistributionConfig();
+const appName = distributionConfig?.branding?.app_name || 'InsightStream goose';
+const appLocale = distributionConfig?.locale?.default || 'en';
+setRuntimeLocale(appLocale);
+app.setName(appName);
 
 const GENERATED_SECRET = crypto.randomBytes(32).toString('hex');
 
@@ -457,6 +465,7 @@ let appConfig = {
   GOOSE_PREDEFINED_MODELS: predefinedModels,
   GOOSE_API_HOST: 'http://127.0.0.1',
   GOOSE_WORKING_DIR: '',
+  GOOSE_LOCALE: appLocale,
   // If GOOSE_ALLOWLIST_WARNING env var is not set, defaults to false (strict blocking mode)
   GOOSE_ALLOWLIST_WARNING: process.env.GOOSE_ALLOWLIST_WARNING === 'true',
 };
@@ -566,10 +575,16 @@ const createChat = async (
     if (isUsingExternalBackend) {
       const response = dialog.showMessageBoxSync({
         type: 'error',
-        title: 'External Backend Unreachable',
+        title: t('error.external_backend_title', 'External backend unreachable'),
         message: `Could not connect to external backend at ${settings.externalGoosed?.url}`,
-        detail: 'The external goosed server may not be running.',
-        buttons: ['Disable External Backend & Retry', 'Quit'],
+        detail: t(
+          'error.external_backend_detail',
+          'The external goosed server may not be running.'
+        ),
+        buttons: [
+          t('error.external_backend_disable_retry', 'Disable External Backend & Retry'),
+          t('error.quit', 'Quit'),
+        ],
         defaultId: 0,
         cancelId: 1,
       });
@@ -586,19 +601,36 @@ const createChat = async (
     } else {
       dialog.showMessageBoxSync({
         type: 'error',
-        title: 'Goose Failed to Start',
-        message: 'The backend server failed to start.',
+        title: t('error.backend_title', 'InsightStream failed to start'),
+        message: t('error.backend_message', 'The backend server failed to start.'),
         detail: errorLog.join('\n'),
-        buttons: ['OK'],
+        buttons: [t('error.ok', 'OK')],
       });
     }
     app.quit();
   }
 
+  if (distributionConfig) {
+    try {
+      await applyDistributionBootstrap({
+        client: goosedClient,
+        distributionConfig,
+        getSettings,
+        updateSettings,
+        logger: log,
+      });
+    } catch (error) {
+      log.error(
+        '[distribution] Bootstrap failed:',
+        typeof error === 'object' ? formatErrorForLogging(error) : error
+      );
+    }
+  }
+
   // Let windowStateKeeper manage the window
   mainWindowState.manage(mainWindow);
 
-  mainWindow.webContents.session.setSpellCheckerLanguages(['en-US', 'en-GB']);
+  mainWindow.webContents.session.setSpellCheckerLanguages(['ru-RU', 'en-US', 'en-GB']);
   mainWindow.webContents.on('context-menu', (_event, params) => {
     const menu = new Menu();
     const hasSpellingSuggestions = params.dictionarySuggestions.length > 0 || params.misspelledWord;
@@ -1743,7 +1775,7 @@ async function appMain() {
   if (process.platform === 'darwin') {
     const dockMenu = Menu.buildFromTemplate([
       {
-        label: 'New Window',
+        label: t('menu.new_chat_window', 'New Chat Window'),
         click: () => {
           createNewWindow(app);
         },
@@ -1756,14 +1788,14 @@ async function appMain() {
 
   const shortcuts = getKeyboardShortcuts(settings);
 
-  const appMenu = menu?.items.find((item) => item.label === 'Goose');
+  const appMenu = menu?.items.find((item) => item.label === app.name || item.label === 'Goose');
   if (appMenu?.submenu) {
     appMenu.submenu.insert(1, new MenuItem({ type: 'separator' }));
     if (shortcuts.settings) {
       appMenu.submenu.insert(
         1,
         new MenuItem({
-          label: 'Settings',
+          label: t('menu.settings', 'Settings'),
           accelerator: shortcuts.settings,
           click() {
             const focusedWindow = BrowserWindow.getFocusedWindow();
@@ -1781,7 +1813,7 @@ async function appMain() {
 
     const findSubmenu = Menu.buildFromTemplate([
       {
-        label: 'Find…',
+        label: t('menu.find_action', 'Find...'),
         accelerator: shortcuts.find || undefined,
         click() {
           const focusedWindow = BrowserWindow.getFocusedWindow();
@@ -1789,7 +1821,7 @@ async function appMain() {
         },
       },
       {
-        label: 'Find Next',
+        label: t('menu.find_next', 'Find Next'),
         accelerator: shortcuts.findNext || undefined,
         click() {
           const focusedWindow = BrowserWindow.getFocusedWindow();
@@ -1797,7 +1829,7 @@ async function appMain() {
         },
       },
       {
-        label: 'Find Previous',
+        label: t('menu.find_prev', 'Find Previous'),
         accelerator: shortcuts.findPrevious || undefined,
         click() {
           const focusedWindow = BrowserWindow.getFocusedWindow();
@@ -1805,7 +1837,7 @@ async function appMain() {
         },
       },
       {
-        label: 'Use Selection for Find',
+        label: t('menu.use_selection_find', 'Use Selection for Find'),
         accelerator: process.platform === 'darwin' ? 'Command+E' : undefined,
         click() {
           const focusedWindow = BrowserWindow.getFocusedWindow();
@@ -1818,7 +1850,7 @@ async function appMain() {
     editMenu.submenu.insert(
       selectAllIndex + 1,
       new MenuItem({
-        label: 'Find',
+        label: t('menu.find', 'Find'),
         submenu: findSubmenu,
       })
     );
@@ -1834,7 +1866,7 @@ async function appMain() {
       fileMenu.submenu.insert(
         menuIndex++,
         new MenuItem({
-          label: 'New Chat',
+          label: t('menu.new_chat', 'New Chat'),
           accelerator: shortcuts.newChat,
           click() {
             const focusedWindow = BrowserWindow.getFocusedWindow();
@@ -1848,7 +1880,7 @@ async function appMain() {
       fileMenu.submenu.insert(
         menuIndex++,
         new MenuItem({
-          label: 'New Chat Window',
+          label: t('menu.new_chat_window', 'New Chat Window'),
           accelerator: shortcuts.newChatWindow,
           click() {
             ipcMain.emit('create-chat-window');
@@ -1861,7 +1893,7 @@ async function appMain() {
       fileMenu.submenu.insert(
         menuIndex++,
         new MenuItem({
-          label: 'Open Directory...',
+          label: t('menu.open_directory', 'Open Directory...'),
           accelerator: shortcuts.openDirectory,
           click: () => openDirectoryDialog(),
         })
@@ -1873,7 +1905,7 @@ async function appMain() {
       fileMenu.submenu.insert(
         menuIndex++,
         new MenuItem({
-          label: 'Recent Directories',
+          label: t('menu.recent_directories', 'Recent Directories'),
           submenu: recentFilesSubmenu,
         })
       );
@@ -1884,7 +1916,7 @@ async function appMain() {
     if (shortcuts.focusWindow) {
       fileMenu.submenu.append(
         new MenuItem({
-          label: 'Focus Goose Window',
+          label: t('menu.focus_window', 'Focus InsightStream Window'),
           accelerator: shortcuts.focusWindow,
           click() {
             focusWindow();
@@ -1896,7 +1928,7 @@ async function appMain() {
     if (shortcuts.quickLauncher) {
       fileMenu.submenu.append(
         new MenuItem({
-          label: 'Quick Launcher',
+          label: t('menu.quick_launcher', 'Quick Launcher'),
           accelerator: shortcuts.quickLauncher,
           click() {
             createLauncher();
@@ -1926,8 +1958,8 @@ async function appMain() {
     if (windowMenu.submenu) {
       if (shortcuts.alwaysOnTop) {
         windowMenu.submenu.append(
-          new MenuItem({
-            label: 'Always on Top',
+        new MenuItem({
+            label: t('menu.always_on_top', 'Always on Top'),
             type: 'checkbox',
             accelerator: shortcuts.alwaysOnTop,
             click(menuItem) {
@@ -1974,9 +2006,9 @@ async function appMain() {
         helpMenu.submenu.append(new MenuItem({ type: 'separator' }));
       }
 
-      // Create the About Goose menu item with a submenu
+      // Create the About app menu item with a submenu
       const aboutGooseMenuItem = new MenuItem({
-        label: 'About Goose',
+        label: t('menu.about', 'About InsightStream goose'),
         submenu: Menu.buildFromTemplate([]), // Start with an empty submenu for About
       });
 
@@ -1984,7 +2016,7 @@ async function appMain() {
       if (aboutGooseMenuItem.submenu) {
         aboutGooseMenuItem.submenu.append(
           new MenuItem({
-            label: `Version ${version || app.getVersion()}`,
+            label: `${t('menu.version', 'Version')} ${version || app.getVersion()}`,
             enabled: false,
           })
         );
@@ -2159,7 +2191,7 @@ async function appMain() {
 
       const response = await fetch(url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; Goose/1.0)',
+          'User-Agent': `Mozilla/5.0 (compatible; ${appName}/1.0)`,
         },
       });
 
@@ -2331,7 +2363,7 @@ app.whenReady().then(async () => {
   try {
     await appMain();
   } catch (error) {
-    dialog.showErrorBox('Goose Error', `Failed to create main window: ${error}`);
+    dialog.showErrorBox(`${appName} Error`, `Failed to create main window: ${error}`);
     app.quit();
   }
 });

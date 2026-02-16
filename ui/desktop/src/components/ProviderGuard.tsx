@@ -19,6 +19,7 @@ import {
   trackOnboardingAbandoned,
   trackOnboardingSetupFailed,
 } from '../utils/analytics';
+import { t } from '../i18n';
 
 import { Goose, OpenRouter, Tetrate, ChatGPT } from './icons';
 
@@ -301,11 +302,15 @@ export default function ProviderGuard({ didSelectProvider, children }: ProviderG
                   <div className="origin-bottom-left goose-icon-animation">
                     <Goose className="size-6 sm:size-8" />
                   </div>
-                  <h1 className="text-2xl sm:text-4xl font-light text-left">Welcome to Goose</h1>
+                  <h1 className="text-2xl sm:text-4xl font-light text-left">
+                    {t('ui.welcome', 'Welcome to InsightStream goose')}
+                  </h1>
                 </div>
                 <p className="text-text-muted text-base sm:text-lg mt-4 sm:mt-6">
-                  Since it’s your first time here, let’s get you set up with an AI provider so goose
-                  can work its magic.
+                  {t(
+                    'ui.welcome_subtitle',
+                    'Since it’s your first time here, let’s get you set up with an AI provider.'
+                  )}
                 </p>
               </div>
 
@@ -438,16 +443,19 @@ export default function ProviderGuard({ didSelectProvider, children }: ProviderG
               {/* Other providers section */}
               <div className="w-full p-4 sm:p-6 bg-transparent border rounded-xl">
                 <h3 className="font-medium text-text-default text-sm sm:text-base mb-3">
-                  Other Providers
+                  {t('ui.other_providers', 'Other Providers')}
                 </h3>
                 <p className="text-text-muted text-sm sm:text-base mb-4">
-                  Set up additional providers manually through settings.
+                  {t(
+                    'ui.other_providers_desc',
+                    'Set up additional providers manually through settings.'
+                  )}
                 </p>
                 <button
                   onClick={() => navigate('/welcome', { replace: true })}
                   className="text-blue-600 hover:text-blue-500 text-sm font-medium transition-colors"
                 >
-                  Go to Provider Settings →
+                  {t('ui.goto_provider_settings', 'Go to Provider Settings')} →
                 </button>
               </div>
               <div className="mt-6">
@@ -461,7 +469,7 @@ export default function ProviderGuard({ didSelectProvider, children }: ProviderG
         {showScrollIndicator && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-none transition-opacity duration-300 opacity-60 animate-bounce">
             <div className="flex flex-col items-center gap-1 text-text-muted">
-              <span className="text-xs">More options below</span>
+              <span className="text-xs">{t('ui.more_options', 'More options below')}</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
@@ -515,7 +523,7 @@ export default function ProviderGuard({ didSelectProvider, children }: ProviderG
             setView={setView}
             onModelSelected={handleModelSelected}
             initialProvider={switchModelProvider}
-            titleOverride="Choose Model"
+            titleOverride={t('ui.choose_model', 'Choose model')}
           />
         )}
       </div>
