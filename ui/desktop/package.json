@@ -1,7 +1,7 @@
 {
   "name": "goose-app",
   "productName": "InsightStream goose",
-  "version": "1.24.0",
+  "version": "1.25.0",
   "description": "InsightStream goose desktop app",
   "engines": {
     "node": "^24.10.0",
