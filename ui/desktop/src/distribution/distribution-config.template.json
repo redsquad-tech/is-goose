@@ -17,7 +17,7 @@
     "base_url": "https://openai.bavadim.xyz/v1/chat/completions",
     "model": "gpt-5.2-codex",
     "api_key_env": "COMPRESSA_API_KEY",
-    "api_key": "__INJECTED_BY_CI__",
+    "api_key": "",
     "supports_streaming": true,
     "requires_auth": true,
     "context_limit": 128000

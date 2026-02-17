@@ -31,7 +31,7 @@ on:
       OSX_CODESIGN_ROLE:
         required: false
       OPENAI_API_KEY:
-        required: true
+        required: false
 
 name: Reusable workflow to bundle desktop app
 
@@ -152,11 +152,9 @@ jobs:
         run: df -h
 
       - name: Generate distribution config
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           set -euo pipefail
-          jq --arg api_key "$OPENAI_API_KEY" '.provider.api_key = $api_key' \
+          jq '.provider.api_key = ""' \
             src/distribution/distribution-config.template.json > src/distribution/distribution-config.json
         working-directory: ui/desktop
 
@@ -350,6 +348,8 @@ jobs:
 
       - name: Quick launch test (macOS)
         if: ${{ inputs.quick_test }}
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           # Ensure no quarantine attributes (if needed)
           xattr -cr "${APP_PATH}"

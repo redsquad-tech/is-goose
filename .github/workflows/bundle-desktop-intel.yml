@@ -28,6 +28,8 @@ on:
     secrets:
       OSX_CODESIGN_ROLE:
         required: false
+      OPENAI_API_KEY:
+        required: false
 
 name: Reusable workflow to bundle desktop app for Intel Mac
 
@@ -118,6 +120,13 @@ jobs:
       # Check disk space before bundling
       - name: Check disk space before bundling
         run: df -h
+
+      - name: Generate distribution config
+        run: |
+          set -euo pipefail
+          jq '.provider.api_key = ""' \
+            src/distribution/distribution-config.template.json > src/distribution/distribution-config.json
+        working-directory: ui/desktop
 
       - name: Build App
         run: |
@@ -259,6 +268,8 @@ jobs:
 
       - name: Quick launch test (macOS)
         if: ${{ inputs.quick_test }}
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           # Ensure no quarantine attributes (if needed)
           xattr -cr "${APP_PATH}"

@@ -10,6 +10,8 @@ require("dotenv").config();
 const inkeepApiKey = process.env.INKEEP_API_KEY;
 const inkeepIntegrationId = process.env.INKEEP_INTEGRATION_ID;
 const inkeepOrgId = process.env.INKEEP_ORG_ID;
+const repoName = process.env.GITHUB_REPOSITORY?.split("/")[1] || "goose";
+const resolvedBaseUrl = process.env.TARGET_PATH || `/${repoName}/`;
 
 const config: Config = {
   title: "goose",
@@ -21,7 +23,7 @@ const config: Config = {
   url: "https://block.github.io/",
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: process.env.TARGET_PATH || "/goose/",
+  baseUrl: resolvedBaseUrl,
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
@@ -52,7 +54,7 @@ const config: Config = {
         rel: "alternate",
         type: "text/plain",
         title: "LLM context",
-        href: "/goose/llms.txt",
+        href: `${resolvedBaseUrl}llms.txt`,
       },
     },
   ],

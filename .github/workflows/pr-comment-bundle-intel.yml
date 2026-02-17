@@ -69,6 +69,8 @@ jobs:
     with:
       signing: false
       ref: ${{ needs.trigger-on-command.outputs.head_sha }}
+    secrets:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
   pr-comment-intel:
     name: PR Comment with macOS Intel App
