@@ -22,7 +22,7 @@ jobs:
       id-token: write
       contents: read
     with:
-      signing: true
+      signing: ${{ secrets.OSX_CODESIGN_ROLE != '' }}
     secrets:
       OSX_CODESIGN_ROLE: ${{ secrets.OSX_CODESIGN_ROLE }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -33,7 +33,7 @@ jobs:
       id-token: write
       contents: read
     with:
-      signing: true
+      signing: ${{ secrets.OSX_CODESIGN_ROLE != '' }}
     secrets:
       OSX_CODESIGN_ROLE: ${{ secrets.OSX_CODESIGN_ROLE }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}

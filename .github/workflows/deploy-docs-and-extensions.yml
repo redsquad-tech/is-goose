@@ -17,6 +17,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.repository == 'block/goose'
     runs-on: ubuntu-latest
     permissions:
       contents: write
