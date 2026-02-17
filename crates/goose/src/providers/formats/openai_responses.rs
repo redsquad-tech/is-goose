@@ -166,8 +166,6 @@ pub enum ResponsesStreamEvent {
         output_index: i32,
         arguments: String,
     },
-    #[serde(rename = "keepalive")]
-    KeepAlive { sequence_number: i32 },
     #[serde(rename = "error")]
     Error { error: Value },
 }
@@ -675,8 +673,6 @@ where
                 ResponsesStreamEvent::FunctionCallArgumentsDone { .. } => {
                     // Arguments are complete, will be in the OutputItemDone event
                 }
-
-                ResponsesStreamEvent::KeepAlive { .. } => {}
 
                 ResponsesStreamEvent::ResponseFailed { error, .. } => {
                     Err(anyhow!("Responses API failed: {:?}", error))?;
