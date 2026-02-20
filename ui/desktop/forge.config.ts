@@ -99,6 +99,18 @@ module.exports = {
       },
     },
     {
+      name: '@electron-forge/maker-dmg',
+      platforms: ['darwin'],
+    },
+    {
+      name: '@electron-forge/maker-wix',
+      platforms: ['win32'],
+      config: {
+        language: 1033,
+        manufacturer: 'Insight Stream',
+      },
+    },
+    {
       name: '@electron-forge/maker-flatpak',
       config: {
         options: {
