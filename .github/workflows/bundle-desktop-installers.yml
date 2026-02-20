@@ -62,9 +62,6 @@ jobs:
     env:
       GOOSE_BUNDLE_NAME: ${{ vars.GOOSE_BUNDLE_NAME }}
       GOOSE_LOCALE: ${{ vars.GOOSE_LOCALE }}
-      CFLAGS_x86_64_pc_windows_msvc: /MD
-      CXXFLAGS_x86_64_pc_windows_msvc: /MD
-      CMAKE_MSVC_RUNTIME_LIBRARY: MultiThreadedDLL
 
     steps:
       - name: Set repository env
