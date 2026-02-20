@@ -1,6 +1,11 @@
 name: "Bundle Desktop Installers (MSI + DMG)"
 
 on:
+  push:
+    paths-ignore:
+      - "documentation/**"
+    tags:
+      - "v1.*"
   workflow_dispatch:
     inputs:
       ref:
@@ -44,6 +49,11 @@ on:
         required: false
         type: boolean
         default: false
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
 
 jobs:
   build-windows-msi:
@@ -189,3 +199,47 @@ jobs:
         run: |
           echo "Signing was requested but is not automated in this workflow yet."
           echo "Use PRD_desktop-cicd-msi-dmg-signing.md for CI/local signing runbooks and required secrets."
+
+  publish-release:
+    name: Publish MSI/DMG Release Assets
+    if: ${{ startsWith(github.ref, 'refs/tags/v1.') }}
+    runs-on: ubuntu-latest
+    needs:
+      - build-windows-msi
+      - build-macos-dmg
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          merge-multiple: true
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f # v3.2.0
+        with:
+          subject-path: |
+            *.msi
+            *.dmg
+
+      - name: Release versioned
+        uses: ncipollo/release-action@b7eabc95ff50cbeeedec83973935c8f306dfcd0b # v1.20.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts: |
+            *.msi
+            *.dmg
+          allowUpdates: true
+          omitBody: true
+          omitPrereleaseDuringUpdate: true
+
+      - name: Release stable
+        uses: ncipollo/release-action@b7eabc95ff50cbeeedec83973935c8f306dfcd0b # v1.20.0
+        with:
+          tag: stable
+          name: Stable
+          token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts: |
+            *.msi
+            *.dmg
+          allowUpdates: true
+          omitBody: true
+          omitPrereleaseDuringUpdate: true
