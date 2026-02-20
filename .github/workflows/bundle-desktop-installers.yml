@@ -183,7 +183,7 @@ jobs:
           npm run make -- --platform=darwin --arch="${MAC_ARCH}"
 
       - name: Sign and notarize macOS artifacts (Individual API key)
-        if: ${{ inputs.signing && vars.DESKTOP_SIGNING_ENABLED == 'true' && vars.MAC_SIGNING_MODE == 'notarytool_individual' }}
+        if: ${{ (github.event_name == 'push' || inputs.signing) && vars.DESKTOP_SIGNING_ENABLED == 'true' && vars.MAC_SIGNING_MODE == 'notarytool_individual' }}
         env:
           APPLE_API_KEY_ID: ${{ vars.APPLE_API_KEY_ID }}
           APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
@@ -233,7 +233,7 @@ jobs:
           codesign --force --deep --options runtime --timestamp --sign "$IDENTITY" "$APP_PATH"
           codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 
-          xcrun notarytool submit "$DMG_PATH" --key "$API_KEY_PATH" --key-id "$APPLE_API_KEY_ID" --wait
+          xcrun notarytool submit "$DMG_PATH" --key "$API_KEY_PATH" --key-id "$APPLE_API_KEY_ID" --team-id "$APPLE_TEAM_ID" --wait
           xcrun stapler staple "$DMG_PATH"
           spctl -a -t open --context context:primary-signature -v "$DMG_PATH"
 
@@ -246,7 +246,7 @@ jobs:
 
   signing-note:
     name: Signing note
-    if: ${{ inputs.signing && vars.DESKTOP_SIGNING_ENABLED == 'true' }}
+    if: ${{ (github.event_name == 'push' || inputs.signing) && vars.DESKTOP_SIGNING_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     environment: release
     needs:
