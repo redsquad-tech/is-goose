@@ -80,6 +80,17 @@ jobs:
         with:
           node-version: 24.10.0
 
+      - name: Cache node_modules
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
+        with:
+          path: |
+            node_modules
+            ui/desktop/node_modules
+            .hermit/node/cache
+          key: windows-npm-cache-v1-${{ runner.os }}-node24-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            windows-npm-cache-v1-${{ runner.os }}-node24-
+
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
         with:
@@ -89,12 +100,6 @@ jobs:
         shell: bash
         run: |
           rustup target add x86_64-pc-windows-msvc
-
-      - name: Print Windows runtime env
-        shell: bash
-        run: |
-          echo "LLAMA_STATIC_CRT=${LLAMA_STATIC_CRT:-<unset>}"
-          echo "CMAKE_MSVC_RUNTIME_LIBRARY=${CMAKE_MSVC_RUNTIME_LIBRARY:-<unset>}"
 
       - name: Update versions
         if: ${{ inputs.version != '' }}
@@ -108,9 +113,55 @@ jobs:
       - name: Build goosed (Windows)
         shell: bash
         run: |
-          cargo build --release --target x86_64-pc-windows-msvc -p goose-server
-          mkdir -p ui/desktop/src/bin
-          cp target/x86_64-pc-windows-msvc/release/goosed.exe ui/desktop/src/bin/goosed.exe
+          cargo build --release --target x86_64-pc-windows-msvc
+
+      - name: Prepare Windows binary
+        shell: bash
+        run: |
+          if [ ! -f "./target/x86_64-pc-windows-msvc/release/goosed.exe" ]; then
+            echo "Windows binary not found."
+            exit 1
+          fi
+
+          rm -rf ./ui/desktop/src/bin
+          mkdir -p ./ui/desktop/src/bin
+          cp -f ./target/x86_64-pc-windows-msvc/release/goosed.exe ./ui/desktop/src/bin/
+
+          if [ -d "./ui/desktop/src/platform/windows/bin" ]; then
+            for file in ./ui/desktop/src/platform/windows/bin/*.{exe,dll,cmd}; do
+              if [ -f "$file" ] && [ "$(basename "$file")" != "goosed.exe" ]; then
+                cp -f "$file" ./ui/desktop/src/bin/
+              fi
+            done
+            if [ -d "./ui/desktop/src/platform/windows/bin/goose-npm" ]; then
+              cp -r ./ui/desktop/src/platform/windows/bin/goose-npm/ ./ui/desktop/src/bin/goose-npm/
+            fi
+          fi
+
+      - name: Force GitHub HTTPS for npm git dependencies
+        shell: bash
+        run: |
+          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          git config --global url."https://github.com/".insteadOf "git+ssh://git@github.com/"
+
+      - name: Install desktop dependencies
+        shell: bash
+        run: |
+          cd ui/desktop
+          npm ci
+
+      - name: Build Windows ZIP package (intermediate)
+        shell: bash
+        env:
+          ELECTRON_PLATFORM: win32
+        run: |
+          cd ui/desktop
+          node scripts/build-main.js
+          node scripts/prepare-platform-binaries.js
+          npm run make -- --platform=win32 --arch=x64 --targets=@electron-forge/maker-zip
+          echo "ZIP outputs:"
+          find out/make -type f -name '*.zip' -print
 
       - name: Install WiX Toolset
         shell: powershell
@@ -119,10 +170,11 @@ jobs:
 
       - name: Build MSI installer
         shell: bash
+        env:
+          ELECTRON_PLATFORM: win32
         run: |
           cd ui/desktop
-          npm ci
-          npm run make -- --platform=win32 --arch=x64
+          npm run make -- --platform=win32 --arch=x64 --targets=@electron-forge/maker-wix
 
       - name: Upload MSI artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -201,7 +253,7 @@ jobs:
           set -euo pipefail
           cd ui/desktop
 
-          if [ -z "${APPLE_API_KEY_ID:-}" ] || [ -z "${APPLE_TEAM_ID:-}" ] || [ -z "${APPLE_DEVELOPER_ID_APP_CERT_P12_BASE64:-}" ] || [ -z "${APPLE_DEVELOPER_ID_APP_CERT_PASSWORD:-}" ] || [ -z "${APPLE_API_PRIVATE_KEY_P8_BASE64:-}" ]; then
+          if [ -z "${APPLE_API_KEY_ID:-}" ] || [ -z "${APPLE_API_ISSUER_ID:-}" ] || [ -z "${APPLE_TEAM_ID:-}" ] || [ -z "${APPLE_DEVELOPER_ID_APP_CERT_P12_BASE64:-}" ] || [ -z "${APPLE_DEVELOPER_ID_APP_CERT_PASSWORD:-}" ] || [ -z "${APPLE_API_PRIVATE_KEY_P8_BASE64:-}" ]; then
             echo "Missing required Apple signing/notarization env values"
             exit 1
           fi
@@ -240,12 +292,7 @@ jobs:
           codesign --force --deep --options runtime --timestamp --sign "$IDENTITY" "$APP_PATH"
           codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 
-          # API key mode: use issuer when present; individual keys omit issuer.
-          if [ -n "${APPLE_API_ISSUER_ID:-}" ]; then
-            xcrun notarytool submit "$DMG_PATH" --key "$API_KEY_PATH" --key-id "$APPLE_API_KEY_ID" --issuer "$APPLE_API_ISSUER_ID" --wait
-          else
-            xcrun notarytool submit "$DMG_PATH" --key "$API_KEY_PATH" --key-id "$APPLE_API_KEY_ID" --wait
-          fi
+          xcrun notarytool submit "$DMG_PATH" --key "$API_KEY_PATH" --key-id "$APPLE_API_KEY_ID" --issuer "$APPLE_API_ISSUER_ID" --wait
           xcrun stapler staple "$DMG_PATH"
           spctl -a -t open --context context:primary-signature -v "$DMG_PATH"
 
