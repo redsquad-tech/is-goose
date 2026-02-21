@@ -101,6 +101,33 @@ jobs:
         run: |
           rustup target add x86_64-pc-windows-msvc
 
+      - name: Collect Windows build diagnostics (pre-build)
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIAG_DIR="$RUNNER_TEMP/windows-link-diagnostics"
+          mkdir -p "$DIAG_DIR"
+
+          {
+            echo "runner.os=${RUNNER_OS}"
+            echo "runner.arch=${RUNNER_ARCH}"
+            echo "github.sha=${GITHUB_SHA}"
+            echo "github.ref=${GITHUB_REF}"
+            echo "github.run_id=${GITHUB_RUN_ID}"
+            echo "github.run_attempt=${GITHUB_RUN_ATTEMPT}"
+            echo "RUSTFLAGS=${RUSTFLAGS:-}"
+            echo "LLAMA_STATIC_CRT=${LLAMA_STATIC_CRT:-}"
+            echo "CMAKE_MSVC_RUNTIME_LIBRARY=${CMAKE_MSVC_RUNTIME_LIBRARY:-}"
+            echo "CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_RUSTFLAGS=${CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_RUSTFLAGS:-}"
+          } > "$DIAG_DIR/env.txt"
+
+          rustc -vV > "$DIAG_DIR/rustc-vV.txt"
+          cargo -vV > "$DIAG_DIR/cargo-vV.txt"
+          rustup show > "$DIAG_DIR/rustup-show.txt"
+          cargo tree --target x86_64-pc-windows-msvc -e features -i tokenizers > "$DIAG_DIR/cargo-tree-tokenizers.txt" || true
+          cargo tree --target x86_64-pc-windows-msvc -e features -i llama-cpp-sys-2 > "$DIAG_DIR/cargo-tree-llama.txt" || true
+          cargo tree --target x86_64-pc-windows-msvc -e features -i esaxx-rs > "$DIAG_DIR/cargo-tree-esaxx.txt" || true
+
       - name: Update versions
         if: ${{ inputs.version != '' }}
         shell: bash
@@ -113,7 +140,25 @@ jobs:
       - name: Build goosed (Windows)
         shell: bash
         run: |
-          cargo build --release --target x86_64-pc-windows-msvc
+          set -euo pipefail
+          DIAG_DIR="$RUNNER_TEMP/windows-link-diagnostics"
+          mkdir -p "$DIAG_DIR"
+          set +e
+          cargo build --release --target x86_64-pc-windows-msvc --verbose 2>&1 | tee "$DIAG_DIR/cargo-build.log"
+          build_exit=${PIPESTATUS[0]}
+          set -e
+          if [ "$build_exit" -ne 0 ]; then
+            rg -n "LNK2038|LNK2005|LNK1169|RuntimeLibrary|error: linking with link\\.exe failed" "$DIAG_DIR/cargo-build.log" > "$DIAG_DIR/linker-signatures.txt" || true
+            exit 1
+          fi
+
+      - name: Upload Windows linker diagnostics
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: windows-link-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/windows-link-diagnostics/**
+          if-no-files-found: warn
 
       - name: Prepare Windows binary
         shell: bash
