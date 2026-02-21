@@ -1,32 +1,11 @@
+use crate::dictation::whisper::LOCAL_WHISPER_MODEL_CONFIG_KEY;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use tokio::io::AsyncWriteExt;
-use tracing::info;
 use utoipa::ToSchema;
-
-fn partial_path_for(destination: &Path) -> PathBuf {
-    destination.with_extension(
-        destination
-            .extension()
-            .map(|e| format!("{}.part", e.to_string_lossy()))
-            .unwrap_or_else(|| "part".to_string()),
-    )
-}
-
-/// Remove any leftover `.part` files in the given directory.
-pub fn cleanup_partial_downloads(dir: &Path) {
-    if let Ok(entries) = std::fs::read_dir(dir) {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path.extension().is_some_and(|e| e == "part") {
-                let _ = std::fs::remove_file(&path);
-            }
-        }
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct DownloadProgress {
@@ -99,9 +78,8 @@ impl DownloadManager {
         model_id: String,
         url: String,
         destination: PathBuf,
-        on_complete: Option<Box<dyn FnOnce() + Send + 'static>>,
     ) -> Result<()> {
-        info!(model_id = %model_id, url = %url, destination = ?destination, "Starting model download");
+        // Initialize progress
         {
             let mut downloads = self
                 .downloads
@@ -137,13 +115,10 @@ impl DownloadManager {
         let downloads = self.downloads.clone();
         let model_id_clone = model_id.clone();
 
-        let destination_for_cleanup = destination.clone();
-
         // Download in background task
         tokio::spawn(async move {
             match Self::download_file(&url, &destination, &downloads, &model_id_clone).await {
                 Ok(_) => {
-                    info!(model_id = %model_id_clone, "Download completed successfully");
                     if let Ok(mut downloads) = downloads.lock() {
                         if let Some(progress) = downloads.get_mut(&model_id_clone) {
                             progress.status = DownloadStatus::Completed;
@@ -151,15 +126,10 @@ impl DownloadManager {
                         }
                     }
 
-                    if let Some(callback) = on_complete {
-                        callback();
-                    }
+                    let _ = crate::config::Config::global()
+                        .set_param(LOCAL_WHISPER_MODEL_CONFIG_KEY, model_id_clone.clone());
                 }
                 Err(e) => {
-                    // Clean up partial file on failure
-                    let partial = partial_path_for(&destination_for_cleanup);
-                    let _ = tokio::fs::remove_file(&partial).await;
-
                     if let Ok(mut downloads) = downloads.lock() {
                         if let Some(progress) = downloads.get_mut(&model_id_clone) {
                             progress.status = DownloadStatus::Failed;
@@ -196,8 +166,7 @@ impl DownloadManager {
             }
         }
 
-        let partial_path = partial_path_for(destination);
-        let mut file = tokio::fs::File::create(&partial_path).await?;
+        let mut file = tokio::fs::File::create(destination).await?;
         let mut bytes_downloaded = 0u64;
         let start_time = std::time::Instant::now();
 
@@ -216,7 +185,8 @@ impl DownloadManager {
             };
 
             if should_cancel {
-                let _ = tokio::fs::remove_file(&partial_path).await;
+                // Clean up partial download
+                let _ = tokio::fs::remove_file(destination).await;
                 return Ok(());
             }
 
@@ -256,8 +226,6 @@ impl DownloadManager {
         }
 
         file.flush().await?;
-        drop(file);
-        tokio::fs::rename(&partial_path, destination).await?;
         Ok(())
     }
 

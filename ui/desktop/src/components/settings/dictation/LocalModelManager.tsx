@@ -38,6 +38,19 @@ export const LocalModelManager = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Determine if we should show all models by default (if non-recommended models are downloaded)
+  useEffect(() => {
+    if (models.length === 0) return;
+
+    const hasDownloadedNonRecommended = models.some(
+      (model) => model.downloaded && !model.recommended
+    );
+
+    if (hasDownloadedNonRecommended && !showAllModels) {
+      setShowAllModels(true);
+    }
+  }, [models, showAllModels]);
+
   const loadSelectedModel = async () => {
     try {
       const value = await read(LOCAL_WHISPER_MODEL_CONFIG_KEY, false);
@@ -132,14 +145,8 @@ export const LocalModelManager = () => {
     }
   };
 
-  const hasDownloadedNonRecommended = models.some(
-    (model) => model.downloaded && !model.recommended
-  );
-  const displayedModels = showAllModels || hasDownloadedNonRecommended
-    ? models
-    : models.filter((m) => m.recommended);
+  const displayedModels = showAllModels ? models : models.filter((m) => m.recommended);
   const hasNonRecommendedModels = models.some((m) => !m.recommended);
-  const showToggleButton = hasNonRecommendedModels && !hasDownloadedNonRecommended;
 
   return (
     <div className="space-y-3">
@@ -260,7 +267,7 @@ export const LocalModelManager = () => {
         })}
       </div>
 
-      {showToggleButton && (
+      {hasNonRecommendedModels && (
         <Button
           variant="ghost"
           size="sm"
@@ -275,7 +282,7 @@ export const LocalModelManager = () => {
           ) : (
             <>
               <ChevronDown className="w-4 h-4 mr-1" />
-              Show all models ({models.length - displayedModels.length} more)
+              Show all models
             </>
           )}
         </Button>
