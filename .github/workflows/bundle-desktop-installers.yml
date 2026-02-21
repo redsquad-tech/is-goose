@@ -144,7 +144,7 @@ jobs:
           DIAG_DIR="$RUNNER_TEMP/windows-link-diagnostics"
           mkdir -p "$DIAG_DIR"
           set +e
-          cargo build --release --target x86_64-pc-windows-msvc --verbose 2>&1 | tee "$DIAG_DIR/cargo-build.log"
+          cargo build --release -p goose-server --target x86_64-pc-windows-msvc --verbose 2>&1 | tee "$DIAG_DIR/cargo-build.log"
           build_exit=${PIPESTATUS[0]}
           set -e
           if [ "$build_exit" -ne 0 ]; then
