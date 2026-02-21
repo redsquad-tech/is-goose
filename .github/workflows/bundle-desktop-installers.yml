@@ -62,8 +62,6 @@ jobs:
     env:
       GOOSE_BUNDLE_NAME: ${{ vars.GOOSE_BUNDLE_NAME }}
       GOOSE_LOCALE: ${{ vars.GOOSE_LOCALE }}
-      # tokenizers/esaxx-rs forces static CRT on Windows; align llama-cpp-sys with it.
-      LLAMA_STATIC_CRT: "1"
 
     steps:
       - name: Set repository env
@@ -194,6 +192,7 @@ jobs:
         if: ${{ (github.event_name == 'push' || inputs.signing) && vars.DESKTOP_SIGNING_ENABLED == 'true' && vars.MAC_SIGNING_MODE == 'notarytool_individual' }}
         env:
           APPLE_API_KEY_ID: ${{ vars.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ vars.APPLE_API_ISSUER_ID }}
           APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
           APPLE_DEVELOPER_ID_APP_CERT_P12_BASE64: ${{ secrets.APPLE_DEVELOPER_ID_APP_CERT_P12_BASE64 }}
           APPLE_DEVELOPER_ID_APP_CERT_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_APP_CERT_PASSWORD }}
@@ -241,7 +240,12 @@ jobs:
           codesign --force --deep --options runtime --timestamp --sign "$IDENTITY" "$APP_PATH"
           codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 
-          xcrun notarytool submit "$DMG_PATH" --key "$API_KEY_PATH" --key-id "$APPLE_API_KEY_ID" --team-id "$APPLE_TEAM_ID" --wait
+          # API key mode: use issuer when present; individual keys omit issuer.
+          if [ -n "${APPLE_API_ISSUER_ID:-}" ]; then
+            xcrun notarytool submit "$DMG_PATH" --key "$API_KEY_PATH" --key-id "$APPLE_API_KEY_ID" --issuer "$APPLE_API_ISSUER_ID" --wait
+          else
+            xcrun notarytool submit "$DMG_PATH" --key "$API_KEY_PATH" --key-id "$APPLE_API_KEY_ID" --wait
+          fi
           xcrun stapler staple "$DMG_PATH"
           spctl -a -t open --context context:primary-signature -v "$DMG_PATH"
 
