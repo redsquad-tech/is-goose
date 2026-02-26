@@ -20,7 +20,7 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::ops::Deref;
 
-use super::tool_schema::validate_tool_schemas;
+pub use super::tool_schema::validate_tool_schemas;
 
 type ToolCallData = HashMap<
     i32,
