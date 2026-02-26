@@ -143,29 +143,6 @@ export type CreateScheduleRequest = {
     recipe: Recipe;
 };
 
-/**
- * Content Security Policy metadata for MCP Apps
- * Specifies allowed domains for network connections and resource loading
- */
-export type CspMetadata = {
-    /**
-     * Domains allowed for base-uri
-     */
-    baseUriDomains?: Array<string> | null;
-    /**
-     * Domains allowed for connect-src (fetch, XHR, WebSocket)
-     */
-    connectDomains?: Array<string> | null;
-    /**
-     * Domains allowed for frame-src (nested iframes)
-     */
-    frameDomains?: Array<string> | null;
-    /**
-     * Domains allowed for resource loading (scripts, styles, images, fonts, media)
-     */
-    resourceDomains?: Array<string> | null;
-};
-
 export type DeclarativeProviderConfig = {
     api_key_env?: string;
     base_url: string;
@@ -201,42 +178,6 @@ export type DetectProviderRequest = {
 export type DetectProviderResponse = {
     models: Array<string>;
     provider_name: string;
-};
-
-export type DictationProvider = 'openai' | 'elevenlabs' | 'groq' | 'local';
-
-export type DictationProviderStatus = {
-    /**
-     * Config key name if uses_provider_config is false
-     */
-    config_key?: string | null;
-    /**
-     * Whether the provider is fully configured and ready to use
-     */
-    configured: boolean;
-    /**
-     * Description of what this provider does
-     */
-    description: string;
-    /**
-     * Custom host URL if configured (only for providers that support it)
-     */
-    host?: string | null;
-    /**
-     * Path to settings if uses_provider_config is true
-     */
-    settings_path?: string | null;
-    /**
-     * Whether this provider uses the main provider config (true) or has its own key (false)
-     */
-    uses_provider_config: boolean;
-};
-
-export type DownloadModelRequest = {
-    /**
-     * Model spec like "bartowski/Llama-3.2-3B-Instruct-GGUF:Q4_K_M"
-     */
-    spec: string;
 };
 
 export type DownloadProgress = {
@@ -448,41 +389,6 @@ export type GetToolsQuery = {
     session_id: string;
 };
 
-export type GooseApp = McpAppResource & (WindowProps | null) & {
-    mcpServers?: Array<string>;
-    prd?: string | null;
-};
-
-/**
- * A single downloadable GGUF file (used internally and for downloads).
- */
-export type HfGgufFile = {
-    download_url: string;
-    filename: string;
-    quantization: string;
-    size_bytes: number;
-};
-
-export type HfModelInfo = {
-    author: string;
-    downloads: number;
-    gguf_files: Array<HfGgufFile>;
-    model_name: string;
-    repo_id: string;
-};
-
-/**
- * A quantization variant — groups sharded files into one logical entry.
- */
-export type HfQuantVariant = {
-    description: string;
-    download_url: string;
-    filename: string;
-    quality_rank: number;
-    quantization: string;
-    size_bytes: number;
-};
-
 export type Icon = {
     mimeType?: string;
     sizes?: Array<string>;
@@ -498,15 +404,6 @@ export type ImageContent = {
     };
     data: string;
     mimeType: string;
-};
-
-export type ImportAppRequest = {
-    html: string;
-};
-
-export type ImportAppResponse = {
-    message: string;
-    name: string;
 };
 
 export type ImportSessionRequest = {
@@ -527,14 +424,6 @@ export type KillJobResponse = {
     message: string;
 };
 
-export type ListAppsRequest = {
-    session_id?: string | null;
-};
-
-export type ListAppsResponse = {
-    apps: Array<GooseApp>;
-};
-
 export type ListRecipeResponse = {
     manifests: Array<RecipeManifest>;
 };
@@ -546,49 +435,6 @@ export type ListSchedulesResponse = {
 export type LoadedProvider = {
     config: DeclarativeProviderConfig;
     is_editable: boolean;
-};
-
-export type LocalModelResponse = {
-    filename: string;
-    id: string;
-    quantization: string;
-    recommended: boolean;
-    repo_id: string;
-    settings: ModelSettings;
-    size_bytes: number;
-    status: ModelDownloadStatus;
-};
-
-/**
- * MCP App Resource
- * Represents a UI resource that can be rendered in an MCP App
- */
-export type McpAppResource = {
-    _meta?: ResourceMetadata | null;
-    /**
-     * Base64-encoded binary content (alternative to text)
-     */
-    blob?: string | null;
-    /**
-     * Optional description of what this resource does
-     */
-    description?: string | null;
-    /**
-     * MIME type (should be "text/html;profile=mcp-app" for MCP Apps)
-     */
-    mimeType: string;
-    /**
-     * Human-readable name of the resource
-     */
-    name: string;
-    /**
-     * Text content of the resource (HTML for MCP Apps)
-     */
-    text?: string | null;
-    /**
-     * URI of the resource (must use ui:// scheme)
-     */
-    uri: string;
 };
 
 /**
@@ -686,18 +532,6 @@ export type ModelConfig = {
     toolshim_model?: string | null;
 };
 
-export type ModelDownloadStatus = {
-    state: 'NotDownloaded';
-} | {
-    bytes_downloaded: number;
-    progress_percent: number;
-    speed_bps?: number | null;
-    state: 'Downloading';
-    total_bytes: number;
-} | {
-    state: 'Downloaded';
-};
-
 /**
  * Information about a model's capabilities
  */
@@ -750,23 +584,6 @@ export type ModelInfoResponse = {
     source: string;
 };
 
-export type ModelSettings = {
-    context_size?: number | null;
-    flash_attention?: boolean | null;
-    frequency_penalty?: number;
-    max_output_tokens?: number | null;
-    n_batch?: number | null;
-    n_gpu_layers?: number | null;
-    n_threads?: number | null;
-    native_tool_calling?: boolean;
-    presence_penalty?: number;
-    repeat_last_n?: number;
-    repeat_penalty?: number;
-    sampling?: SamplingConfig;
-    use_jinja?: boolean;
-    use_mlock?: boolean;
-};
-
 export type ParseRecipeRequest = {
     content: string;
 };
@@ -781,30 +598,6 @@ export type Permission = 'always_allow' | 'allow_once' | 'cancel' | 'deny_once' 
  * Enum representing the possible permission levels for a tool.
  */
 export type PermissionLevel = 'always_allow' | 'ask_before' | 'never_allow';
-
-/**
- * Sandbox permissions for MCP Apps
- * Specifies which browser capabilities the UI needs access to.
- * Maps to the iframe Permission Policy `allow` attribute.
- */
-export type PermissionsMetadata = {
-    /**
-     * Request camera access (maps to Permission Policy `camera` feature)
-     */
-    camera?: boolean;
-    /**
-     * Request clipboard write access (maps to Permission Policy `clipboard-write` feature)
-     */
-    clipboardWrite?: boolean;
-    /**
-     * Request geolocation access (maps to Permission Policy `geolocation` feature)
-     */
-    geolocation?: boolean;
-    /**
-     * Request microphone access (maps to Permission Policy `microphone` feature)
-     */
-    microphone?: boolean;
-};
 
 export type PrincipalType = 'Extension' | 'Tool';
 
@@ -826,7 +619,7 @@ export type ProviderDetails = {
     provider_type: ProviderType;
 };
 
-export type ProviderEngine = 'openai' | 'ollama' | 'anthropic';
+export type ProviderEngine = 'openai';
 
 /**
  * Metadata about a provider's configuration requirements and capabilities
@@ -986,11 +779,6 @@ export type RemoveExtensionRequest = {
     session_id: string;
 };
 
-export type RepoVariantsResponse = {
-    recommended_index?: number | null;
-    variants: Array<HfQuantVariant>;
-};
-
 export type ResourceContents = {
     _meta?: {
         [key: string]: unknown;
@@ -1005,13 +793,6 @@ export type ResourceContents = {
     blob: string;
     mimeType?: string;
     uri: string;
-};
-
-/**
- * Resource metadata containing UI configuration
- */
-export type ResourceMetadata = {
-    ui?: UiMetadata | null;
 };
 
 export type Response = {
@@ -1066,22 +847,6 @@ export type Role = string;
 
 export type RunNowResponse = {
     session_id: string;
-};
-
-export type SamplingConfig = {
-    type: 'Greedy';
-} | {
-    min_p: number;
-    seed?: number | null;
-    temperature: number;
-    top_k: number;
-    top_p: number;
-    type: 'Temperature';
-} | {
-    eta: number;
-    seed?: number | null;
-    tau: number;
-    type: 'MirostatV2';
 };
 
 export type SavePromptRequest = {
@@ -1392,25 +1157,6 @@ export type ToolResponse = {
     };
 };
 
-export type TranscribeRequest = {
-    /**
-     * Base64 encoded audio data
-     */
-    audio: string;
-    /**
-     * MIME type of the audio (e.g., "audio/webm", "audio/wav")
-     */
-    mime_type: string;
-    provider: DictationProvider;
-};
-
-export type TranscribeResponse = {
-    /**
-     * Transcribed text from the audio
-     */
-    text: string;
-};
-
 export type TunnelInfo = {
     hostname: string;
     secret: string;
@@ -1419,22 +1165,6 @@ export type TunnelInfo = {
 };
 
 export type TunnelState = 'idle' | 'starting' | 'running' | 'error' | 'disabled';
-
-/**
- * UI-specific metadata for MCP resources
- */
-export type UiMetadata = {
-    csp?: CspMetadata | null;
-    /**
-     * Preferred domain for the app (used for CORS)
-     */
-    domain?: string | null;
-    permissions?: PermissionsMetadata;
-    /**
-     * Whether the app prefers to have a border around it
-     */
-    prefersBorder?: boolean | null;
-};
 
 export type UpdateCustomProviderRequest = {
     api_key: string;
@@ -1500,34 +1230,6 @@ export type UpsertConfigQuery = {
 
 export type UpsertPermissionsQuery = {
     tool_permissions: Array<ToolPermission>;
-};
-
-export type WhisperModelResponse = {
-    /**
-     * Description
-     */
-    description: string;
-    /**
-     * Model identifier (e.g., "tiny", "base", "small")
-     */
-    id: string;
-    /**
-     * Model file size in MB
-     */
-    size_mb: number;
-    /**
-     * Download URL from HuggingFace
-     */
-    url: string;
-} & {
-    downloaded: boolean;
-    recommended: boolean;
-};
-
-export type WindowProps = {
-    height: number;
-    resizable: boolean;
-    width: number;
 };
 
 export type ConfirmToolActionData = {
@@ -1620,100 +1322,6 @@ export type CallToolResponses = {
 };
 
 export type CallToolResponse2 = CallToolResponses[keyof CallToolResponses];
-
-export type ExportAppData = {
-    body?: never;
-    path: {
-        /**
-         * Name of the app to export
-         */
-        name: string;
-    };
-    query?: never;
-    url: '/agent/export_app/{name}';
-};
-
-export type ExportAppErrors = {
-    /**
-     * App not found
-     */
-    404: ErrorResponse;
-    /**
-     * Internal server error
-     */
-    500: ErrorResponse;
-};
-
-export type ExportAppError = ExportAppErrors[keyof ExportAppErrors];
-
-export type ExportAppResponses = {
-    /**
-     * App HTML exported successfully
-     */
-    200: string;
-};
-
-export type ExportAppResponse = ExportAppResponses[keyof ExportAppResponses];
-
-export type ImportAppData = {
-    body: ImportAppRequest;
-    path?: never;
-    query?: never;
-    url: '/agent/import_app';
-};
-
-export type ImportAppErrors = {
-    /**
-     * Bad request - Invalid HTML
-     */
-    400: ErrorResponse;
-    /**
-     * Internal server error
-     */
-    500: ErrorResponse;
-};
-
-export type ImportAppError = ImportAppErrors[keyof ImportAppErrors];
-
-export type ImportAppResponses = {
-    /**
-     * App imported successfully
-     */
-    201: ImportAppResponse;
-};
-
-export type ImportAppResponse2 = ImportAppResponses[keyof ImportAppResponses];
-
-export type ListAppsData = {
-    body?: never;
-    path?: never;
-    query?: {
-        session_id?: string | null;
-    };
-    url: '/agent/list_apps';
-};
-
-export type ListAppsErrors = {
-    /**
-     * Unauthorized - Invalid or missing API key
-     */
-    401: ErrorResponse;
-    /**
-     * Internal server error
-     */
-    500: ErrorResponse;
-};
-
-export type ListAppsError = ListAppsErrors[keyof ListAppsErrors];
-
-export type ListAppsResponses = {
-    /**
-     * List of apps retrieved successfully
-     */
-    200: ListAppsResponse;
-};
-
-export type ListAppsResponse2 = ListAppsResponses[keyof ListAppsResponses];
 
 export type ReadResourceData = {
     body: ReadResourceRequest;
@@ -2717,197 +2325,6 @@ export type DiagnosticsResponses = {
 
 export type DiagnosticsResponse = DiagnosticsResponses[keyof DiagnosticsResponses];
 
-export type GetDictationConfigData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/dictation/config';
-};
-
-export type GetDictationConfigResponses = {
-    /**
-     * Audio transcription provider configurations
-     */
-    200: {
-        [key: string]: DictationProviderStatus;
-    };
-};
-
-export type GetDictationConfigResponse = GetDictationConfigResponses[keyof GetDictationConfigResponses];
-
-export type ListModelsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/dictation/models';
-};
-
-export type ListModelsResponses = {
-    /**
-     * List of available Whisper models
-     */
-    200: Array<WhisperModelResponse>;
-};
-
-export type ListModelsResponse = ListModelsResponses[keyof ListModelsResponses];
-
-export type DeleteModelData = {
-    body?: never;
-    path: {
-        model_id: string;
-    };
-    query?: never;
-    url: '/dictation/models/{model_id}';
-};
-
-export type DeleteModelErrors = {
-    /**
-     * Model not found or not downloaded
-     */
-    404: unknown;
-    /**
-     * Failed to delete model
-     */
-    500: unknown;
-};
-
-export type DeleteModelResponses = {
-    /**
-     * Model deleted
-     */
-    200: unknown;
-};
-
-export type CancelDownloadData = {
-    body?: never;
-    path: {
-        model_id: string;
-    };
-    query?: never;
-    url: '/dictation/models/{model_id}/download';
-};
-
-export type CancelDownloadErrors = {
-    /**
-     * Download not found
-     */
-    404: unknown;
-};
-
-export type CancelDownloadResponses = {
-    /**
-     * Download cancelled
-     */
-    200: unknown;
-};
-
-export type GetDownloadProgressData = {
-    body?: never;
-    path: {
-        model_id: string;
-    };
-    query?: never;
-    url: '/dictation/models/{model_id}/download';
-};
-
-export type GetDownloadProgressErrors = {
-    /**
-     * Download not found
-     */
-    404: unknown;
-};
-
-export type GetDownloadProgressResponses = {
-    /**
-     * Download progress
-     */
-    200: DownloadProgress;
-};
-
-export type GetDownloadProgressResponse = GetDownloadProgressResponses[keyof GetDownloadProgressResponses];
-
-export type DownloadModelData = {
-    body?: never;
-    path: {
-        model_id: string;
-    };
-    query?: never;
-    url: '/dictation/models/{model_id}/download';
-};
-
-export type DownloadModelErrors = {
-    /**
-     * Download already in progress
-     */
-    400: unknown;
-    /**
-     * Internal server error
-     */
-    500: unknown;
-};
-
-export type DownloadModelResponses = {
-    /**
-     * Download started
-     */
-    202: unknown;
-};
-
-export type TranscribeDictationData = {
-    body: TranscribeRequest;
-    path?: never;
-    query?: never;
-    url: '/dictation/transcribe';
-};
-
-export type TranscribeDictationErrors = {
-    /**
-     * Invalid request (bad base64 or unsupported format)
-     */
-    400: unknown;
-    /**
-     * Invalid API key
-     */
-    401: unknown;
-    /**
-     * Provider not configured
-     */
-    412: unknown;
-    /**
-     * Audio file too large (max 25MB)
-     */
-    413: unknown;
-    /**
-     * Rate limit exceeded
-     */
-    429: unknown;
-    /**
-     * Internal server error
-     */
-    500: unknown;
-    /**
-     * Provider API error
-     */
-    502: unknown;
-    /**
-     * Service unavailable
-     */
-    503: unknown;
-    /**
-     * Request timeout
-     */
-    504: unknown;
-};
-
-export type TranscribeDictationResponses = {
-    /**
-     * Audio transcribed successfully
-     */
-    200: TranscribeResponse;
-};
-
-export type TranscribeDictationResponse = TranscribeDictationResponses[keyof TranscribeDictationResponses];
-
 export type StartOpenrouterSetupData = {
     body?: never;
     path?: never;
@@ -2933,221 +2350,6 @@ export type StartTetrateSetupResponses = {
 };
 
 export type StartTetrateSetupResponse = StartTetrateSetupResponses[keyof StartTetrateSetupResponses];
-
-export type DownloadHfModelData = {
-    body: DownloadModelRequest;
-    path?: never;
-    query?: never;
-    url: '/local-inference/download';
-};
-
-export type DownloadHfModelErrors = {
-    /**
-     * Invalid request
-     */
-    400: unknown;
-};
-
-export type DownloadHfModelResponses = {
-    /**
-     * Download started
-     */
-    202: string;
-};
-
-export type DownloadHfModelResponse = DownloadHfModelResponses[keyof DownloadHfModelResponses];
-
-export type ListLocalModelsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/local-inference/models';
-};
-
-export type ListLocalModelsResponses = {
-    /**
-     * List of available local LLM models
-     */
-    200: Array<LocalModelResponse>;
-};
-
-export type ListLocalModelsResponse = ListLocalModelsResponses[keyof ListLocalModelsResponses];
-
-export type DeleteLocalModelData = {
-    body?: never;
-    path: {
-        model_id: string;
-    };
-    query?: never;
-    url: '/local-inference/models/{model_id}';
-};
-
-export type DeleteLocalModelErrors = {
-    /**
-     * Model not found
-     */
-    404: unknown;
-};
-
-export type DeleteLocalModelResponses = {
-    /**
-     * Model deleted
-     */
-    200: unknown;
-};
-
-export type CancelLocalModelDownloadData = {
-    body?: never;
-    path: {
-        model_id: string;
-    };
-    query?: never;
-    url: '/local-inference/models/{model_id}/download';
-};
-
-export type CancelLocalModelDownloadErrors = {
-    /**
-     * No active download
-     */
-    404: unknown;
-};
-
-export type CancelLocalModelDownloadResponses = {
-    /**
-     * Download cancelled
-     */
-    200: unknown;
-};
-
-export type GetLocalModelDownloadProgressData = {
-    body?: never;
-    path: {
-        model_id: string;
-    };
-    query?: never;
-    url: '/local-inference/models/{model_id}/download';
-};
-
-export type GetLocalModelDownloadProgressErrors = {
-    /**
-     * No active download
-     */
-    404: unknown;
-};
-
-export type GetLocalModelDownloadProgressResponses = {
-    /**
-     * Download progress
-     */
-    200: DownloadProgress;
-};
-
-export type GetLocalModelDownloadProgressResponse = GetLocalModelDownloadProgressResponses[keyof GetLocalModelDownloadProgressResponses];
-
-export type GetModelSettingsData = {
-    body?: never;
-    path: {
-        model_id: string;
-    };
-    query?: never;
-    url: '/local-inference/models/{model_id}/settings';
-};
-
-export type GetModelSettingsErrors = {
-    /**
-     * Model not found
-     */
-    404: unknown;
-};
-
-export type GetModelSettingsResponses = {
-    /**
-     * Model settings
-     */
-    200: ModelSettings;
-};
-
-export type GetModelSettingsResponse = GetModelSettingsResponses[keyof GetModelSettingsResponses];
-
-export type UpdateModelSettingsData = {
-    body: ModelSettings;
-    path: {
-        model_id: string;
-    };
-    query?: never;
-    url: '/local-inference/models/{model_id}/settings';
-};
-
-export type UpdateModelSettingsErrors = {
-    /**
-     * Model not found
-     */
-    404: unknown;
-    /**
-     * Failed to save settings
-     */
-    500: unknown;
-};
-
-export type UpdateModelSettingsResponses = {
-    /**
-     * Settings updated
-     */
-    200: ModelSettings;
-};
-
-export type UpdateModelSettingsResponse = UpdateModelSettingsResponses[keyof UpdateModelSettingsResponses];
-
-export type GetRepoFilesData = {
-    body?: never;
-    path: {
-        author: string;
-        repo: string;
-    };
-    query?: never;
-    url: '/local-inference/repo/{author}/{repo}/files';
-};
-
-export type GetRepoFilesResponses = {
-    /**
-     * GGUF files in the repo
-     */
-    200: RepoVariantsResponse;
-};
-
-export type GetRepoFilesResponse = GetRepoFilesResponses[keyof GetRepoFilesResponses];
-
-export type SearchHfModelsData = {
-    body?: never;
-    path?: never;
-    query: {
-        /**
-         * Search query
-         */
-        q: string;
-        /**
-         * Max results
-         */
-        limit?: number | null;
-    };
-    url: '/local-inference/search';
-};
-
-export type SearchHfModelsErrors = {
-    /**
-     * Search failed
-     */
-    500: unknown;
-};
-
-export type SearchHfModelsResponses = {
-    /**
-     * Search results
-     */
-    200: Array<HfModelInfo>;
-};
-
-export type SearchHfModelsResponse = SearchHfModelsResponses[keyof SearchHfModelsResponses];
 
 export type McpUiProxyData = {
     body?: never;
