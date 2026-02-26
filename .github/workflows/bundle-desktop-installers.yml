@@ -62,7 +62,6 @@ jobs:
     env:
       GOOSE_BUNDLE_NAME: ${{ vars.GOOSE_BUNDLE_NAME }}
       GOOSE_LOCALE: ${{ vars.GOOSE_LOCALE }}
-      CMAKE_MSVC_RUNTIME_LIBRARY: MultiThreadedDLL
 
     steps:
       - name: Set repository env
@@ -81,6 +80,17 @@ jobs:
         with:
           node-version: 24.10.0
 
+      - name: Cache node_modules
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
+        with:
+          path: |
+            node_modules
+            ui/desktop/node_modules
+            .hermit/node/cache
+          key: windows-npm-cache-v1-${{ runner.os }}-node24-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            windows-npm-cache-v1-${{ runner.os }}-node24-
+
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
         with:
@@ -90,6 +100,33 @@ jobs:
         shell: bash
         run: |
           rustup target add x86_64-pc-windows-msvc
+
+      - name: Collect Windows build diagnostics (pre-build)
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIAG_DIR="$RUNNER_TEMP/windows-link-diagnostics"
+          mkdir -p "$DIAG_DIR"
+
+          {
+            echo "runner.os=${RUNNER_OS}"
+            echo "runner.arch=${RUNNER_ARCH}"
+            echo "github.sha=${GITHUB_SHA}"
+            echo "github.ref=${GITHUB_REF}"
+            echo "github.run_id=${GITHUB_RUN_ID}"
+            echo "github.run_attempt=${GITHUB_RUN_ATTEMPT}"
+            echo "RUSTFLAGS=${RUSTFLAGS:-}"
+            echo "LLAMA_STATIC_CRT=${LLAMA_STATIC_CRT:-}"
+            echo "CMAKE_MSVC_RUNTIME_LIBRARY=${CMAKE_MSVC_RUNTIME_LIBRARY:-}"
+            echo "CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_RUSTFLAGS=${CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_RUSTFLAGS:-}"
+          } > "$DIAG_DIR/env.txt"
+
+          rustc -vV > "$DIAG_DIR/rustc-vV.txt"
+          cargo -vV > "$DIAG_DIR/cargo-vV.txt"
+          rustup show > "$DIAG_DIR/rustup-show.txt"
+          cargo tree --target x86_64-pc-windows-msvc -e features -i tokenizers > "$DIAG_DIR/cargo-tree-tokenizers.txt" || true
+          cargo tree --target x86_64-pc-windows-msvc -e features -i llama-cpp-sys-2 > "$DIAG_DIR/cargo-tree-llama.txt" || true
+          cargo tree --target x86_64-pc-windows-msvc -e features -i esaxx-rs > "$DIAG_DIR/cargo-tree-esaxx.txt" || true
 
       - name: Update versions
         if: ${{ inputs.version != '' }}
@@ -102,10 +139,82 @@ jobs:
 
       - name: Build goosed (Windows)
         shell: bash
+        env:
+          LLAMA_STATIC_CRT: "OFF"
+          CMAKE_MSVC_RUNTIME_LIBRARY: MultiThreadedDLL
+          CMAKE_ARGS: -DLLAMA_STATIC_CRT=OFF -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDLL
         run: |
-          cargo build --release --target x86_64-pc-windows-msvc -p goose-server
-          mkdir -p ui/desktop/src/bin
-          cp target/x86_64-pc-windows-msvc/release/goosed.exe ui/desktop/src/bin/goosed.exe
+          set -euo pipefail
+          DIAG_DIR="$RUNNER_TEMP/windows-link-diagnostics"
+          mkdir -p "$DIAG_DIR"
+          set +e
+          cargo build --release -p goose-server --target x86_64-pc-windows-msvc --verbose 2>&1 | tee "$DIAG_DIR/cargo-build.log"
+          build_exit=${PIPESTATUS[0]}
+          set -e
+          if [ "$build_exit" -ne 0 ]; then
+            if command -v rg >/dev/null 2>&1; then
+              rg -n "LNK2038|LNK2005|LNK1169|RuntimeLibrary|error: linking with link\\.exe failed" "$DIAG_DIR/cargo-build.log" > "$DIAG_DIR/linker-signatures.txt" || true
+            else
+              grep -En "LNK2038|LNK2005|LNK1169|RuntimeLibrary|error: linking with link\\.exe failed" "$DIAG_DIR/cargo-build.log" > "$DIAG_DIR/linker-signatures.txt" || true
+            fi
+            exit 1
+          fi
+
+      - name: Upload Windows linker diagnostics
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: windows-link-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/windows-link-diagnostics/**
+          if-no-files-found: warn
+
+      - name: Prepare Windows binary
+        shell: bash
+        run: |
+          if [ ! -f "./target/x86_64-pc-windows-msvc/release/goosed.exe" ]; then
+            echo "Windows binary not found."
+            exit 1
+          fi
+
+          rm -rf ./ui/desktop/src/bin
+          mkdir -p ./ui/desktop/src/bin
+          cp -f ./target/x86_64-pc-windows-msvc/release/goosed.exe ./ui/desktop/src/bin/
+
+          if [ -d "./ui/desktop/src/platform/windows/bin" ]; then
+            for file in ./ui/desktop/src/platform/windows/bin/*.{exe,dll,cmd}; do
+              if [ -f "$file" ] && [ "$(basename "$file")" != "goosed.exe" ]; then
+                cp -f "$file" ./ui/desktop/src/bin/
+              fi
+            done
+            if [ -d "./ui/desktop/src/platform/windows/bin/goose-npm" ]; then
+              cp -r ./ui/desktop/src/platform/windows/bin/goose-npm/ ./ui/desktop/src/bin/goose-npm/
+            fi
+          fi
+
+      - name: Force GitHub HTTPS for npm git dependencies
+        shell: bash
+        run: |
+          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          git config --global url."https://github.com/".insteadOf "git+ssh://git@github.com/"
+
+      - name: Install desktop dependencies
+        shell: bash
+        run: |
+          cd ui/desktop
+          npm ci
+
+      - name: Build Windows ZIP package (intermediate)
+        shell: bash
+        env:
+          ELECTRON_PLATFORM: win32
+        run: |
+          cd ui/desktop
+          node scripts/build-main.js
+          node scripts/prepare-platform-binaries.js
+          npm run make -- --platform=win32 --arch=x64 --targets=@electron-forge/maker-zip
+          echo "ZIP outputs:"
+          find out/make -type f -name '*.zip' -print
 
       - name: Install WiX Toolset
         shell: powershell
@@ -114,10 +223,11 @@ jobs:
 
       - name: Build MSI installer
         shell: bash
+        env:
+          ELECTRON_PLATFORM: win32
         run: |
           cd ui/desktop
-          npm ci
-          npm run make -- --platform=win32 --arch=x64
+          npm run make -- --platform=win32 --arch=x64 --targets=@electron-forge/maker-wix
 
       - name: Upload MSI artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -184,9 +294,9 @@ jobs:
           npm run make -- --platform=darwin --arch="${MAC_ARCH}"
 
       - name: Sign and notarize macOS artifacts (Individual API key)
-        if: ${{ (github.event_name == 'push' || inputs.signing) && vars.DESKTOP_SIGNING_ENABLED == 'true' && vars.MAC_SIGNING_MODE == 'notarytool_individual' }}
         env:
           APPLE_API_KEY_ID: ${{ vars.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ vars.APPLE_API_ISSUER_ID }}
           APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
           APPLE_DEVELOPER_ID_APP_CERT_P12_BASE64: ${{ secrets.APPLE_DEVELOPER_ID_APP_CERT_P12_BASE64 }}
           APPLE_DEVELOPER_ID_APP_CERT_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_APP_CERT_PASSWORD }}
@@ -224,19 +334,97 @@ jobs:
           fi
 
           APP_PATH="$(find out -type d -name '*.app' | head -n1)"
-          DMG_PATH="$(find out/make -type f -name '*.dmg' | head -n1)"
+          ORIGINAL_DMG_PATH="$(find out/make -type f -name '*.dmg' | head -n1)"
 
-          if [ -z "$APP_PATH" ] || [ -z "$DMG_PATH" ]; then
-            echo "Could not find app or dmg artifact for signing"
+          if [ -z "$APP_PATH" ]; then
+            echo "Could not find app artifact for signing"
             exit 1
           fi
 
-          codesign --force --deep --options runtime --timestamp --sign "$IDENTITY" "$APP_PATH"
-          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+          if [ -n "$ORIGINAL_DMG_PATH" ]; then
+            echo "Original unsigned DMG: $ORIGINAL_DMG_PATH"
+          fi
 
-          xcrun notarytool submit "$DMG_PATH" --key "$API_KEY_PATH" --key-id "$APPLE_API_KEY_ID" --team-id "$APPLE_TEAM_ID" --wait
+          xattr -cr "$APP_PATH"
+
+          # Sign nested Mach-O binaries first (Electron libs, helper binaries, bundled goosed, etc.).
+          while IFS= read -r -d '' file; do
+            if file "$file" | grep -q "Mach-O"; then
+              codesign --force --options runtime --timestamp --sign "$IDENTITY" "$file"
+            fi
+          done < <(find "$APP_PATH/Contents" -type f -print0)
+
+          # Then sign nested bundles/frameworks, and finally the app bundle.
+          while IFS= read -r -d '' bundle; do
+            codesign --force --options runtime --timestamp --sign "$IDENTITY" "$bundle"
+          done < <(find "$APP_PATH/Contents" -type d \( -name "*.app" -o -name "*.framework" -o -name "*.xpc" \) -print0 | sort -z -r)
+
+          codesign --force --options runtime --timestamp --sign "$IDENTITY" "$APP_PATH"
+          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+          # Before notarization this commonly reports "Unnotarized Developer ID".
+          # Keep it informational so we fail only on signing/notarization errors.
+          spctl -a -t exec -v "$APP_PATH" || true
+
+          APP_NAME="$(basename "$APP_PATH" .app)"
+          DMG_PATH="$RUNNER_TEMP/${APP_NAME}-${MAC_ARCH}-signed.dmg"
+          hdiutil create -volname "$APP_NAME" -srcfolder "$APP_PATH" -ov -format UDZO "$DMG_PATH"
+          # DMG itself must be signed, otherwise post-staple spctl may report "no usable signature".
+          codesign --force --timestamp --sign "$IDENTITY" "$DMG_PATH"
+          codesign --verify --verbose=2 "$DMG_PATH"
+
+          SUBMIT_JSON="$RUNNER_TEMP/notary-submit.json"
+          WAIT_JSON="$RUNNER_TEMP/notary-wait.json"
+          LOG_JSON="$RUNNER_TEMP/notary-log.json"
+
+          run_notary_cycle() {
+            local submit_exit
+            local wait_exit
+            local status
+
+            local -a auth_args=(--key "$API_KEY_PATH" --key-id "$APPLE_API_KEY_ID" --issuer "$APPLE_API_ISSUER_ID")
+
+            set +e
+            xcrun notarytool submit "$DMG_PATH" "${auth_args[@]}" --output-format json > "$SUBMIT_JSON"
+            submit_exit=$?
+            set -e
+            if [ "$submit_exit" -ne 0 ]; then
+              echo "Notary submit failed (exit=$submit_exit)"
+              cat "$SUBMIT_JSON" || true
+              return 1
+            fi
+
+            SUBMISSION_ID="$(jq -r '.id // empty' "$SUBMIT_JSON")"
+            if [ -z "$SUBMISSION_ID" ]; then
+              echo "Notary submission id is missing"
+              cat "$SUBMIT_JSON" || true
+              return 1
+            fi
+            echo "Notary submission id: $SUBMISSION_ID"
+
+            set +e
+            xcrun notarytool wait "$SUBMISSION_ID" "${auth_args[@]}" --output-format json > "$WAIT_JSON"
+            wait_exit=$?
+            set -e
+
+            status="$(jq -r '.status // empty' "$WAIT_JSON")"
+            if [ "$wait_exit" -ne 0 ] || [ "$status" != "Accepted" ]; then
+              echo "Notarization failed. status=${status:-unknown}, exit=$wait_exit"
+              xcrun notarytool log "$SUBMISSION_ID" "${auth_args[@]}" --output-format json > "$LOG_JSON" || true
+              echo "Notary detailed log:"
+              cat "$LOG_JSON" || true
+              return 1
+            fi
+
+            return 0
+          }
+
+          run_notary_cycle
+
           xcrun stapler staple "$DMG_PATH"
           spctl -a -t open --context context:primary-signature -v "$DMG_PATH"
+
+          mkdir -p out/make/signed
+          cp -f "$DMG_PATH" "out/make/signed/$(basename "$DMG_PATH")"
 
       - name: Upload DMG artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0

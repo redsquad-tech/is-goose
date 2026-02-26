@@ -107,7 +107,6 @@ candle-core = { version = "0.9", default-features = false }
 candle-nn = { version = "0.9", default-features = false }
 candle-transformers = { version = "0.9", default-features = false }
 byteorder = "1.5.0"
-tokenizers = "0.21.0"
 hf-hub = { version = "0.4.3", default-features = false, features = ["tokio"] }
 symphonia = { version = "0.5", features = ["all"] }
 rubato = "0.16"
@@ -126,11 +125,18 @@ ignore = { workspace = true }
 which = { workspace = true }
 pctx_code_mode = "^0.2.3"
 unbinder = "0.1.7"
-llama-cpp-2 = { version = "0.1.133", features = ["sampler"] }
 encoding_rs = "0.8.35"
+sse-stream = "0.2.1"
+
+[target.'cfg(not(target_os = "windows"))'.dependencies]
+tokenizers = "0.21.0"
+
+[target.'cfg(all(not(target_os = "windows"), not(target_os = "macos")))'.dependencies]
+llama-cpp-2 = { version = "0.1.133", features = ["sampler"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 winapi = { version = "0.3", features = ["wincred"] }
+tokenizers = { version = "0.21.0", default-features = false, features = ["onig", "progressbar"] }
 
 # Platform-specific GPU acceleration for Whisper and local inference
 [target.'cfg(target_os = "macos")'.dependencies]
