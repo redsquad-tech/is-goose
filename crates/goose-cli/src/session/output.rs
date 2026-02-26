@@ -798,10 +798,7 @@ fn split_tool_name(tool_name: &str) -> (String, String) {
 }
 
 fn extension_display_name(name: &str) -> String {
-    match name {
-        "code_execution" => "Code Mode".to_string(),
-        _ => name.to_string(),
-    }
+    name.to_string()
 }
 
 pub fn format_subagent_tool_call_message(subagent_id: &str, tool_name: &str) -> String {
@@ -821,15 +818,6 @@ pub fn render_subagent_tool_call(
     arguments: Option<&JsonObject>,
     debug: bool,
 ) {
-    if tool_name == "code_execution__execute_code" {
-        let tool_graph = arguments
-            .and_then(|args| args.get("tool_graph"))
-            .and_then(Value::as_array)
-            .filter(|arr| !arr.is_empty());
-        if let Some(tool_graph) = tool_graph {
-            return render_subagent_tool_graph(subagent_id, tool_graph);
-        }
-    }
     let tool_header = format!(
         "  {} {}",
         style("▸").dim(),
@@ -838,53 +826,6 @@ pub fn render_subagent_tool_call(
     println!();
     println!("{}", tool_header);
     print_params(&arguments.cloned(), 1, debug);
-    println!();
-}
-
-fn render_subagent_tool_graph(subagent_id: &str, tool_graph: &[Value]) {
-    let short_id = subagent_id.rsplit('_').next().unwrap_or(subagent_id);
-    let count = tool_graph.len();
-    let plural = if count == 1 { "" } else { "s" };
-    println!();
-    println!(
-        "  {} {} {} {} tool call{}",
-        style("▸").dim(),
-        style(format!("[subagent:{}]", short_id)).dim(),
-        style("execute_code").dim(),
-        style(count).dim(),
-        plural,
-    );
-
-    for (i, node) in tool_graph.iter().filter_map(Value::as_object).enumerate() {
-        let tool = node
-            .get("tool")
-            .and_then(Value::as_str)
-            .unwrap_or("unknown");
-        let desc = node
-            .get("description")
-            .and_then(Value::as_str)
-            .unwrap_or("");
-        let deps: Vec<_> = node
-            .get("depends_on")
-            .and_then(Value::as_array)
-            .into_iter()
-            .flatten()
-            .filter_map(Value::as_u64)
-            .map(|d| (d + 1).to_string())
-            .collect();
-        let deps_str = if deps.is_empty() {
-            String::new()
-        } else {
-            format!(" (uses {})", deps.join(", "))
-        };
-        println!(
-            "    {}. {} {}{}",
-            style(i + 1).dim(),
-            style(tool).dim(),
-            style(desc).dim(),
-            style(deps_str).dim()
-        );
-    }
     println!();
 }
 

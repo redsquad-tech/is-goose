@@ -12,7 +12,6 @@ workspace = true
 
 [features]
 default = []
-cuda = ["goose/cuda"]
 
 [dependencies]
 goose = { path = "../goose" }

@@ -9,7 +9,6 @@ description.workspace = true
 
 [features]
 default = []
-cuda = ["candle-core/cuda", "candle-nn/cuda", "llama-cpp-2/cuda"]
 
 [lints]
 workspace = true
@@ -81,17 +80,6 @@ sqlx = { version = "0.8", default-features = false, features = [
     "migrate",
 ] }
 
-# For Bedrock provider
-aws-config = { version = "=1.8.12", features = ["behavior-version-latest"] }
-aws-smithy-types = "=1.3.5"
-aws-sdk-bedrockruntime = "=1.120.0"
-
-# For SageMaker TGI provider
-aws-sdk-sagemakerruntime = "1.62.0"
-
-# For GCP Vertex AI provider auth
-jsonwebtoken = { version = "10.3.0", features = ["aws_lc_rs"] }
-
 blake3 = "1.5"
 fs2 = { workspace = true }
 tokio-stream = { workspace = true }
@@ -101,17 +89,6 @@ ahash = "0.8"
 tokio-util = { workspace = true, features = ["compat"] }
 unicode-normalization = "0.1"
 goose-mcp = { path = "../goose-mcp" }
-
-# For local Whisper transcription
-candle-core = { version = "0.9", default-features = false }
-candle-nn = { version = "0.9", default-features = false }
-candle-transformers = { version = "0.9", default-features = false }
-byteorder = "1.5.0"
-hf-hub = { version = "0.4.3", default-features = false, features = ["tokio"] }
-symphonia = { version = "0.5", features = ["all"] }
-rubato = "0.16"
-zip = "0.6"
-sys-info = "0.9"
 
 schemars = { workspace = true, features = [
     "derive",
@@ -123,26 +100,14 @@ shellexpand = { workspace = true }
 indexmap = "2.12.0"
 ignore = { workspace = true }
 which = { workspace = true }
-pctx_code_mode = "^0.2.3"
 unbinder = "0.1.7"
 encoding_rs = "0.8.35"
 sse-stream = "0.2.1"
-
-[target.'cfg(not(target_os = "windows"))'.dependencies]
-tokenizers = "0.21.0"
-
-[target.'cfg(all(not(target_os = "windows"), not(target_os = "macos")))'.dependencies]
-llama-cpp-2 = { version = "0.1.133", features = ["sampler"] }
+zip = "0.6"
+sys-info = "0.9"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 winapi = { version = "0.3", features = ["wincred"] }
-tokenizers = { version = "0.21.0", default-features = false, features = ["onig", "progressbar"] }
-
-# Platform-specific GPU acceleration for Whisper and local inference
-[target.'cfg(target_os = "macos")'.dependencies]
-candle-core = { version = "0.9", default-features = false, features = ["metal"] }
-candle-nn = { version = "0.9", default-features = false, features = ["metal"] }
-llama-cpp-2 = { version = "0.1.133", features = ["sampler", "metal"] }
 
 [dev-dependencies]
 serial_test = { workspace = true }

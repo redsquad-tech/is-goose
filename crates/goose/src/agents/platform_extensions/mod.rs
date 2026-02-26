@@ -1,6 +1,5 @@
 pub mod apps;
 pub mod chatrecall;
-pub mod code_execution;
 pub mod ext_manager;
 pub mod summon;
 pub mod todo;
@@ -84,21 +83,6 @@ pub static PLATFORM_EXTENSIONS: Lazy<HashMap<&'static str, PlatformExtensionDef>
                 default_enabled: true,
                 unprefixed_tools: true,
                 client_factory: |ctx| Box::new(summon::SummonClient::new(ctx).unwrap()),
-            },
-        );
-
-        map.insert(
-            code_execution::EXTENSION_NAME,
-            PlatformExtensionDef {
-                name: code_execution::EXTENSION_NAME,
-                display_name: "Code Mode",
-                description:
-                    "Goose will make extension calls through code execution, saving tokens",
-                default_enabled: false,
-                unprefixed_tools: true,
-                client_factory: |ctx| {
-                    Box::new(code_execution::CodeExecutionClient::new(ctx).unwrap())
-                },
             },
         );
 

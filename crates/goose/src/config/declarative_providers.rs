@@ -1,8 +1,6 @@
 use crate::config::paths::Paths;
 use crate::config::Config;
-use crate::providers::anthropic::AnthropicProvider;
 use crate::providers::base::{ModelInfo, ProviderType};
-use crate::providers::ollama::OllamaProvider;
 use crate::providers::openai::OpenAiProvider;
 use anyhow::Result;
 use include_dir::{include_dir, Dir};
@@ -23,8 +21,6 @@ pub fn custom_providers_dir() -> std::path::PathBuf {
 #[serde(rename_all = "lowercase")]
 pub enum ProviderEngine {
     OpenAI,
-    Ollama,
-    Anthropic,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -141,8 +137,6 @@ pub fn create_custom_provider(
         name: id.clone(),
         engine: match params.engine.as_str() {
             "openai_compatible" => ProviderEngine::OpenAI,
-            "anthropic_compatible" => ProviderEngine::Anthropic,
-            "ollama_compatible" => ProviderEngine::Ollama,
             _ => return Err(anyhow::anyhow!("Invalid provider type: {}", params.engine)),
         },
         display_name: params.display_name.clone(),
@@ -198,8 +192,6 @@ pub fn update_custom_provider(params: UpdateCustomProviderParams) -> Result<()> 
             name: params.id.clone(),
             engine: match params.engine.as_str() {
                 "openai_compatible" => ProviderEngine::OpenAI,
-                "anthropic_compatible" => ProviderEngine::Anthropic,
-                "ollama_compatible" => ProviderEngine::Ollama,
                 _ => return Err(anyhow::anyhow!("Invalid provider type: {}", params.engine)),
             },
             display_name: params.display_name,
@@ -337,20 +329,6 @@ pub fn register_declarative_provider(
                 &config,
                 provider_type,
                 move |model| OpenAiProvider::from_custom_config(model, config_clone.clone()),
-            );
-        }
-        ProviderEngine::Ollama => {
-            registry.register_with_name::<OllamaProvider, _>(
-                &config,
-                provider_type,
-                move |model| OllamaProvider::from_custom_config(model, config_clone.clone()),
-            );
-        }
-        ProviderEngine::Anthropic => {
-            registry.register_with_name::<AnthropicProvider, _>(
-                &config,
-                provider_type,
-                move |model| AnthropicProvider::from_custom_config(model, config_clone.clone()),
             );
         }
     }

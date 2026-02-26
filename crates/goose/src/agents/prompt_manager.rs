@@ -41,7 +41,6 @@ struct SystemPromptContext {
     enable_subagents: bool,
     max_extensions: usize,
     max_tools: usize,
-    code_execution_mode: bool,
 }
 
 pub struct SystemPromptBuilder<'a, M> {
@@ -52,7 +51,6 @@ pub struct SystemPromptBuilder<'a, M> {
     extension_tool_count: Option<(usize, usize)>,
     subagents_enabled: bool,
     hints: Option<String>,
-    code_execution_mode: bool,
 }
 
 impl<'a> SystemPromptBuilder<'a, PromptManager> {
@@ -79,11 +77,6 @@ impl<'a> SystemPromptBuilder<'a, PromptManager> {
         tool_count: usize,
     ) -> Self {
         self.extension_tool_count = Some((extension_count, tool_count));
-        self
-    }
-
-    pub fn with_code_execution_mode(mut self, enabled: bool) -> Self {
-        self.code_execution_mode = enabled;
         self
     }
 
@@ -157,7 +150,6 @@ impl<'a> SystemPromptBuilder<'a, PromptManager> {
             enable_subagents: self.subagents_enabled,
             max_extensions: MAX_EXTENSIONS,
             max_tools: MAX_TOOLS,
-            code_execution_mode: self.code_execution_mode,
         };
 
         let base_prompt = if let Some(override_prompt) = &self.manager.system_prompt_override {
@@ -242,7 +234,6 @@ impl PromptManager {
             extension_tool_count: None,
             subagents_enabled: false,
             hints: None,
-            code_execution_mode: false,
         }
     }
 

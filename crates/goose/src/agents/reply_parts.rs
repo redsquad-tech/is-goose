@@ -8,7 +8,6 @@ use serde_json::{json, Value};
 use tracing::debug;
 
 use super::super::agents::Agent;
-use crate::agents::platform_extensions::code_execution;
 use crate::conversation::message::{Message, MessageContent, ToolRequest};
 use crate::conversation::Conversation;
 #[cfg(test)]
@@ -146,20 +145,6 @@ impl Agent {
             tools.push(frontend_tool.tool.clone());
         }
 
-        let code_execution_active = self
-            .extension_manager
-            .is_extension_enabled(code_execution::EXTENSION_NAME)
-            .await;
-        if code_execution_active {
-            tools.retain(|tool| {
-                if let Some(owner) = crate::agents::extension_manager::get_tool_owner(tool) {
-                    crate::agents::extension_manager::is_first_class_extension(&owner)
-                } else {
-                    false
-                }
-            });
-        }
-
         // Stable tool ordering is important for multi session prompt caching.
         tools.sort_by(|a, b| a.name.cmp(&b.name));
 
@@ -183,7 +168,6 @@ impl Agent {
             .with_extensions(extensions_info.into_iter())
             .with_frontend_instructions(self.frontend_instructions.lock().await.clone())
             .with_extension_and_tool_counts(extension_count, tool_count)
-            .with_code_execution_mode(code_execution_active)
             .with_hints(working_dir)
             .build();
 
