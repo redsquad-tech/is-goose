@@ -2,7 +2,7 @@
 
 > Note: Normative compatibility requirements are now defined in:
 > - `agent/requirements/GOOSE_CORE_REQUIREMENTS.md`
-> - `agent/requirements/MCP_SERVER_REQUIREMENTS.md`
+> - `agent/requirements/SERVER_REQUIREMENTS.md`
 >
 > This file remains a conceptual overview/reference.
 
