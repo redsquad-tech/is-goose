@@ -1104,7 +1104,11 @@
           },
           "required": true
         },
-        "responses": {}
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
       }
     },
     "/config/custom-providers": {
@@ -1965,7 +1969,11 @@
           },
           "required": true
         },
-        "responses": {}
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
       }
     },
     "/config/slash_commands": {
@@ -6143,122 +6151,6 @@
           "provider_name": "string"
         }
       },
-      "DownloadProgress": {
-        "type": "object",
-        "required": [
-          "model_id",
-          "status",
-          "bytes_downloaded",
-          "total_bytes",
-          "progress_percent"
-        ],
-        "properties": {
-          "bytes_downloaded": {
-            "type": "integer",
-            "format": "int64",
-            "description": "Bytes downloaded so far",
-            "minimum": 0
-          },
-          "error": {
-            "type": "string",
-            "description": "Error message if failed",
-            "nullable": true
-          },
-          "eta_seconds": {
-            "type": "integer",
-            "format": "int64",
-            "description": "Estimated time remaining in seconds",
-            "nullable": true,
-            "minimum": 0
-          },
-          "model_id": {
-            "type": "string",
-            "description": "Model ID being downloaded"
-          },
-          "progress_percent": {
-            "type": "number",
-            "format": "float",
-            "description": "Download progress percentage (0-100)"
-          },
-          "speed_bps": {
-            "type": "integer",
-            "format": "int64",
-            "description": "Download speed in bytes per second",
-            "nullable": true,
-            "minimum": 0
-          },
-          "status": {
-            "$ref": "#/components/schemas/DownloadStatus"
-          },
-          "total_bytes": {
-            "type": "integer",
-            "format": "int64",
-            "description": "Total bytes to download",
-            "minimum": 0
-          }
-        },
-        "example": {
-          "bytes_downloaded": 0,
-          "error": "string",
-          "eta_seconds": 0,
-          "model_id": "string",
-          "progress_percent": 0.1,
-          "speed_bps": 0,
-          "status": "downloading",
-          "total_bytes": 0
-        }
-      },
-      "DownloadStatus": {
-        "type": "string",
-        "enum": [
-          "downloading",
-          "completed",
-          "failed",
-          "cancelled"
-        ],
-        "example": "downloading"
-      },
-      "EmbeddedResource": {
-        "type": "object",
-        "required": [
-          "resource"
-        ],
-        "properties": {
-          "_meta": {
-            "type": "object",
-            "additionalProperties": true
-          },
-          "annotations": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/Annotations"
-              },
-              {
-                "type": "object"
-              }
-            ]
-          },
-          "resource": {
-            "$ref": "#/components/schemas/ResourceContents"
-          }
-        },
-        "example": {
-          "_meta": {},
-          "annotations": {
-            "audience": [
-              "string"
-            ],
-            "lastModified": "2019-08-24T14:15:22Z",
-            "priority": 0
-          },
-          "resource": {
-            "_meta": {},
-            "mimeType": "string",
-            "text": "string",
-            "uri": "string"
-          }
-        }
-      },
       "EncodeRecipeRequest": {
         "type": "object",
         "required": [
@@ -6896,25 +6788,6 @@
           "toolCall": {}
         }
       },
-      "GetToolsQuery": {
-        "type": "object",
-        "required": [
-          "session_id"
-        ],
-        "properties": {
-          "extension_name": {
-            "type": "string",
-            "nullable": true
-          },
-          "session_id": {
-            "type": "string"
-          }
-        },
-        "example": {
-          "extension_name": "string",
-          "session_id": "string"
-        }
-      },
       "Icon": {
         "type": "object",
         "required": [
@@ -7024,20 +6897,6 @@
         "type": "object",
         "additionalProperties": true,
         "example": {}
-      },
-      "KillJobResponse": {
-        "type": "object",
-        "required": [
-          "message"
-        ],
-        "properties": {
-          "message": {
-            "type": "string"
-          }
-        },
-        "example": {
-          "message": "string"
-        }
       },
       "ListRecipeResponse": {
         "type": "object",
@@ -8252,57 +8111,6 @@
           "Custom"
         ],
         "example": "Preferred"
-      },
-      "ProvidersResponse": {
-        "type": "object",
-        "required": [
-          "providers"
-        ],
-        "properties": {
-          "providers": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ProviderDetails"
-            }
-          }
-        },
-        "example": {
-          "providers": [
-            {
-              "is_configured": true,
-              "metadata": {
-                "allows_unlisted_models": true,
-                "config_keys": [
-                  {
-                    "default": "string",
-                    "name": "string",
-                    "oauth_flow": true,
-                    "primary": true,
-                    "required": true,
-                    "secret": true
-                  }
-                ],
-                "default_model": "string",
-                "description": "string",
-                "display_name": "string",
-                "known_models": [
-                  {
-                    "context_limit": 0,
-                    "currency": "string",
-                    "input_token_cost": 0.1,
-                    "name": "string",
-                    "output_token_cost": 0.1,
-                    "supports_cache_control": true
-                  }
-                ],
-                "model_doc_link": "string",
-                "name": "string"
-              },
-              "name": "string",
-              "provider_type": "Preferred"
-            }
-          ]
-        }
       },
       "RawAudioContent": {
         "type": "object",
@@ -10123,21 +9931,6 @@
         ],
         "example": "user"
       },
-      "SessionsQuery": {
-        "type": "object",
-        "required": [
-          "limit"
-        ],
-        "properties": {
-          "limit": {
-            "type": "integer",
-            "minimum": 0
-          }
-        },
-        "example": {
-          "limit": 0
-        }
-      },
       "SetProviderRequest": {
         "type": "object",
         "required": [
@@ -11333,5 +11126,46 @@
         }
       }
     }
-  }
+  },
+  "tags": [
+    {
+      "name": "Recipe Management"
+    },
+    {
+      "name": "schedule"
+    },
+    {
+      "name": "Session Management"
+    },
+    {
+      "name": "super::routes::action_required"
+    },
+    {
+      "name": "super::routes::agent"
+    },
+    {
+      "name": "super::routes::config_management"
+    },
+    {
+      "name": "super::routes::mcp_ui_proxy"
+    },
+    {
+      "name": "super::routes::prompts"
+    },
+    {
+      "name": "super::routes::reply"
+    },
+    {
+      "name": "super::routes::setup"
+    },
+    {
+      "name": "super::routes::status"
+    },
+    {
+      "name": "super::routes::telemetry"
+    },
+    {
+      "name": "super::routes::tunnel"
+    }
+  ]
 }
