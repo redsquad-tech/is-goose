@@ -1,12 +1,30 @@
-import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
 import swagger from "@fastify/swagger";
+import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
 
 import { buildSsePayload, resolveResponse } from "./responder.js";
-import { loadSpec, pickSuccessStatus, toFastifyPath, type OpenAPISpec } from "./spec.js";
+import {
+  type OpenAPISpec,
+  loadSpec,
+  pickSuccessStatus,
+  toFastifyPath,
+} from "./spec.js";
 
 const PUBLIC_PATHS = new Set(["/status", "/mcp-ui-proxy", "/mcp-app-proxy"]);
 
 type RequestWithQuery = FastifyRequest<{ Querystring: { secret?: string } }>;
+type HttpMethod =
+  | "get"
+  | "post"
+  | "put"
+  | "patch"
+  | "delete"
+  | "head"
+  | "options"
+  | "trace";
+type OpenApiOperationObject = {
+  responses?: Record<string, unknown>;
+};
+type OpenApiPathItem = Partial<Record<HttpMethod, OpenApiOperationObject>>;
 
 const isPublicPath = (path: string): boolean => PUBLIC_PATHS.has(path);
 
@@ -43,12 +61,30 @@ const handleMcpUiProxy = (
     .send("<!doctype html><html><body><h1>MCP UI Proxy</h1></body></html>");
 };
 
-const registerOpenApiRoutes = (spec: OpenAPISpec, app: ReturnType<typeof Fastify>, secretKey: string): void => {
-  const paths = (spec.paths ?? {}) as Record<string, Record<string, Record<string, unknown>>>;
+const registerOpenApiRoutes = (
+  spec: OpenAPISpec,
+  app: ReturnType<typeof Fastify>,
+  secretKey: string,
+): void => {
+  const paths = (spec.paths ?? {}) as Record<string, OpenApiPathItem>;
 
   for (const [openApiPath, pathItem] of Object.entries(paths)) {
     for (const [method, operation] of Object.entries(pathItem)) {
-      if (!["get", "post", "put", "patch", "delete", "head", "options", "trace"].includes(method)) {
+      if (
+        ![
+          "get",
+          "post",
+          "put",
+          "patch",
+          "delete",
+          "head",
+          "options",
+          "trace",
+        ].includes(method)
+      ) {
+        continue;
+      }
+      if (!operation) {
         continue;
       }
 
@@ -71,16 +107,22 @@ const registerOpenApiRoutes = (spec: OpenAPISpec, app: ReturnType<typeof Fastify
             return;
           }
 
-          const op = operation as Record<string, any>;
-          const statusCode = pickSuccessStatus((op.responses ?? {}) as Record<string, unknown>);
+          const statusCode = pickSuccessStatus(operation.responses ?? {});
 
           if (openApiPath === "/reply" && method === "post") {
-            const payload = buildSsePayload(op, spec);
+            const payload = buildSsePayload(
+              operation as Record<string, unknown>,
+              spec,
+            );
             reply.code(200).type("text/event-stream").send(payload);
             return;
           }
 
-          const resolved = resolveResponse(op, statusCode, spec);
+          const resolved = resolveResponse(
+            operation as Record<string, unknown>,
+            statusCode,
+            spec,
+          );
           if (resolved.statusCode === 204) {
             reply.code(204).send();
             return;

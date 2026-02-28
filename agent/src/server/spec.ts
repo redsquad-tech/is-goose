@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-export type OpenAPISpec = Record<string, any>;
+export type OpenAPISpec = Record<string, unknown>;
 
 const specPath = path.resolve("requirements/GOOSE_SERVER_OPENAPI.json");
 
@@ -13,7 +13,9 @@ export const loadSpec = (): OpenAPISpec => {
 export const toFastifyPath = (openApiPath: string): string =>
   openApiPath.replaceAll(/\{([^}]+)\}/g, ":$1");
 
-export const pickSuccessStatus = (responses: Record<string, unknown>): number => {
+export const pickSuccessStatus = (
+  responses: Record<string, unknown>,
+): number => {
   const preferred = ["200", "201", "202", "204"];
   for (const code of preferred) {
     if (responses[code] !== undefined) {

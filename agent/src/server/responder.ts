@@ -2,7 +2,9 @@ import OpenAPISampler from "openapi-sampler";
 
 import type { OpenAPISpec } from "./spec.js";
 
-const pickContentType = (content: Record<string, unknown>): string | null => {
+type JsonMap = Record<string, unknown>;
+
+const pickContentType = (content: JsonMap): string | null => {
   const preference = [
     "application/json",
     "text/plain",
@@ -20,7 +22,10 @@ const pickContentType = (content: Record<string, unknown>): string | null => {
   return first ?? null;
 };
 
-const sampleFromSchema = (schema: Record<string, unknown> | undefined, spec: OpenAPISpec): unknown => {
+const sampleFromSchema = (
+  schema: JsonMap | undefined,
+  spec: OpenAPISpec,
+): unknown => {
   if (!schema) {
     return {};
   }
@@ -31,47 +36,58 @@ const sampleFromSchema = (schema: Record<string, unknown> | undefined, spec: Ope
   }
 };
 
-export const buildResponseBody = (
-  mediaTypeObject: Record<string, any>,
+const buildResponseBody = (
+  mediaTypeObject: JsonMap,
   spec: OpenAPISpec,
 ): unknown => {
   if (mediaTypeObject.example !== undefined) {
     return mediaTypeObject.example;
   }
 
-  if (mediaTypeObject.examples && typeof mediaTypeObject.examples === "object") {
-    const first = Object.values(mediaTypeObject.examples)[0] as Record<string, unknown> | undefined;
+  if (
+    mediaTypeObject.examples &&
+    typeof mediaTypeObject.examples === "object"
+  ) {
+    const first = Object.values(mediaTypeObject.examples as JsonMap)[0] as
+      | JsonMap
+      | undefined;
     if (first?.value !== undefined) {
       return first.value;
     }
   }
 
-  return sampleFromSchema(mediaTypeObject.schema as Record<string, unknown> | undefined, spec);
+  return sampleFromSchema(mediaTypeObject.schema as JsonMap | undefined, spec);
 };
 
 export const resolveResponse = (
-  operation: Record<string, any>,
+  operation: JsonMap,
   statusCode: number,
   spec: OpenAPISpec,
 ): { statusCode: number; contentType: string | null; body: unknown } => {
-  const response = (operation.responses?.[String(statusCode)] ??
-    operation.responses?.default ??
-    {}) as Record<string, any>;
-  const content = (response.content ?? {}) as Record<string, unknown>;
+  const responses = (operation.responses ?? {}) as JsonMap;
+  const response = (responses[String(statusCode)] ??
+    responses.default ??
+    {}) as JsonMap;
+  const content = (response.content ?? {}) as JsonMap;
   const contentType = pickContentType(content);
 
   if (!contentType) {
     return { statusCode, contentType: null, body: null };
   }
 
-  const mediaTypeObject = content[contentType] as Record<string, any>;
+  const mediaTypeObject = content[contentType] as JsonMap;
   const body = buildResponseBody(mediaTypeObject, spec);
   return { statusCode, contentType, body };
 };
 
-export const buildSsePayload = (operation: Record<string, any>, spec: OpenAPISpec): string => {
-  const stream =
-    operation.responses?.["200"]?.content?.["text/event-stream"] as Record<string, any> | undefined;
+export const buildSsePayload = (
+  operation: JsonMap,
+  spec: OpenAPISpec,
+): string => {
+  const responses = (operation.responses ?? {}) as JsonMap;
+  const ok = (responses["200"] ?? {}) as JsonMap;
+  const content = (ok.content ?? {}) as JsonMap;
+  const stream = content["text/event-stream"] as JsonMap | undefined;
   const body = buildResponseBody(stream ?? {}, spec);
   return `data: ${JSON.stringify(body)}\n\n`;
 };
