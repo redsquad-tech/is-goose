@@ -52,7 +52,7 @@ The goal is requirement-level compatibility with a shorter, clearer, and easier-
 - PR-ready changes MUST pass `npm run test`.
 
 ## Development Workflow (TDD)
-1. Formalize or update requirements in `requirements/`.
+1. Formalize or update requirements in `docs/requirements/`.
 2. Write or update tests first.
 3. Implement the minimum code needed to pass tests.
 4. Refactor while keeping tests green.
@@ -62,3 +62,7 @@ The goal is requirement-level compatibility with a shorter, clearer, and easier-
 - Project stack: `TypeScript`, `fp-ts`, `xstate`.
 - Strict typing is mandatory; `any` is not allowed.
 - Prefer simple, expressive code and fail-fast behavior over defensive boilerplate.
+
+## Task management
+
+- use `tasks` skill to manage tasks
