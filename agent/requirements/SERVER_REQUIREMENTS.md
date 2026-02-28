@@ -162,6 +162,20 @@ Goose injects request metadata (for example session/workdir context) via MCP ext
 
 Server MUST ignore unknown metadata fields safely and MUST NOT fail solely due to extra extension metadata.
 
+### 9.3 Inline Python compatibility profile
+
+If a Goose-compatible implementation supports Goose extension type `inline_python` (tool server defined as inline code + dependencies), it MUST conform to:
+- `agent/requirements/INLINE_PYTHON_REQUIREMENTS.md`
+
+This requirement is additive to this document and governs schema, lifecycle, security, and runtime compatibility for inline Python extensions.
+
+### 9.4 Developer extension compatibility profile
+
+If a Goose-compatible implementation supports Goose builtin extension `developer`, it MUST conform to:
+- `agent/requirements/DEVELOPER_EXTENSION_REQUIREMENTS.md`
+
+This requirement is additive to this document and governs tools/prompts compatibility, shell invocation flow, cross-platform behavior, and optional Docker profile expectations for the developer extension.
+
 ## 10. Optional MCP Apps / UI Extension Profile (`MAY`)
 
 This section is optional. A server MAY implement MCP Apps/UI extension behavior.
@@ -224,6 +238,8 @@ Before claiming Goose compatibility, verify:
 7. STDIO mode emits protocol-only stdout.
 8. Streamable HTTP framing is parseable by strict clients.
 9. If UI profile is implemented, non-UI fallback works.
+10. If `inline_python` is implemented, conformance checks in `INLINE_PYTHON_REQUIREMENTS.md` pass.
+11. If `developer` is implemented, conformance checks in `DEVELOPER_EXTENSION_REQUIREMENTS.md` pass.
 
 ## 13. References
 
@@ -246,3 +262,10 @@ Goose runtime anchors:
 - `ui/desktop/src/components/ToolCallWithResponse.tsx`
 - `ui/desktop/src/components/MCPUIResourceRenderer.tsx`
 - `crates/goose-server/src/routes/mcp_ui_proxy.rs`
+- `agent/requirements/INLINE_PYTHON_REQUIREMENTS.md`
+- `agent/requirements/DEVELOPER_EXTENSION_REQUIREMENTS.md`
+
+Goose server OpenAPI reference:
+- Canonical source (reference repo): `ui/desktop/openapi.json`
+- Local requirements copy (this repo): `agent/requirements/GOOSE_SERVER_OPENAPI.json`
+- Sync policy: update the local requirements copy manually whenever the canonical source changes.

@@ -1,0 +1,38 @@
+{
+  "name": "agent",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest run",
+    "build": "tsc --noEmit",
+    "test:watch": "vitest",
+    "dev": "tsx src/index.ts",
+    "server:start": "tsx src/server/index.ts",
+    "openapi:examples": "tsx scripts/generate-openapi-examples.ts",
+    "openapi:validate": "openapi validate requirements/GOOSE_SERVER_OPENAPI.json",
+    "contract:dredd": "dredd requirements/GOOSE_SERVER_OPENAPI.json http://127.0.0.1:3001 --hookfiles=tests/contract/hooks.cjs --loglevel=error",
+    "test:contract": "start-server-and-test \"npm run server:start\" http://127.0.0.1:3001/status \"npm run contract:dredd\"",
+    "test:all": "npm run build && npm run test && npm run openapi:validate && npm run test:contract"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@fastify/swagger": "^9.7.0",
+    "fastify": "^5.7.4",
+    "fp-ts": "^2.16.11",
+    "xstate": "^5.28.0"
+  },
+  "devDependencies": {
+    "@redocly/openapi-cli": "^0.12.16",
+    "@types/node": "^25.3.2",
+    "dredd": "^14.1.0",
+    "openapi-sampler": "^1.7.0",
+    "start-server-and-test": "^2.1.5",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}

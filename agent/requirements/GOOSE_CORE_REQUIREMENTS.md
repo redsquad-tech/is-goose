@@ -279,3 +279,4 @@ Goose code:
 - `ui/desktop/src/components/ExtensionInstallModal.tsx`
 - `ui/desktop/src/goosed.ts`
 - `ui/desktop/src/main.ts`
+- `agent/requirements/GOOSE_SERVER_OPENAPI.json` (local copy of `ui/desktop/openapi.json`; manually synced)
