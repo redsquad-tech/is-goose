@@ -29,7 +29,7 @@ import { expandTilde } from './utils/pathUtils';
 import log from './utils/logger';
 import { ensureWinShims } from './utils/winShims';
 import { addRecentDir, loadRecentDirs } from './utils/recentDirs';
-import { formatAppName, errorMessage, formatErrorForLogging } from './utils/conversionUtils';
+import { errorMessage, formatErrorForLogging } from './utils/conversionUtils';
 import type { Settings } from './utils/settings';
 import { defaultKeyboardShortcuts, getKeyboardShortcuts } from './utils/settings';
 import * as crypto from 'crypto';
@@ -45,7 +45,6 @@ import {
 import { UPDATES_ENABLED } from './updates';
 import './utils/recipeHash';
 import { Client } from './api/client';
-import { GooseApp } from './api';
 import installExtension, { REACT_DEVELOPER_TOOLS } from 'electron-devtools-installer';
 import { BLOCKED_PROTOCOLS, WEB_PROTOCOLS } from './utils/urlSecurity';
 import { t } from './i18n';
@@ -475,7 +474,6 @@ let appConfig = {
 
 const windowMap = new Map<number, BrowserWindow>();
 const goosedClients = new Map<number, Client>();
-const appWindows = new Map<string, BrowserWindow>();
 
 const windowPowerSaveBlockers = new Map<number, number>(); // windowId -> blockerId
 // Track pending initial messages per window
@@ -2257,99 +2255,6 @@ async function appMain() {
     }
   });
 
-  ipcMain.handle('launch-app', async (event, gooseApp: GooseApp) => {
-    try {
-      const launchingWindow = BrowserWindow.fromWebContents(event.sender);
-      if (!launchingWindow) {
-        throw new Error('Could not find launching window');
-      }
-
-      const launchingWindowId = launchingWindow.id;
-      const launchingClient = goosedClients.get(launchingWindowId);
-      if (!launchingClient) {
-        throw new Error('No client found for launching window');
-      }
-
-      const appWindow = new BrowserWindow({
-        title: formatAppName(gooseApp.name),
-        width: gooseApp.width ?? 800,
-        height: gooseApp.height ?? 600,
-        resizable: gooseApp.resizable ?? true,
-        useContentSize: true,
-        webPreferences: {
-          preload: path.join(__dirname, 'preload.js'),
-          nodeIntegration: false,
-          contextIsolation: true,
-          webSecurity: true,
-          partition: 'persist:goose',
-        },
-      });
-
-      goosedClients.set(appWindow.id, launchingClient);
-      appWindows.set(gooseApp.name, appWindow);
-
-      appWindow.on('close', () => {
-        goosedClients.delete(appWindow.id);
-        appWindows.delete(gooseApp.name);
-      });
-
-      const workingDir = app.getPath('home');
-      const extensionName = gooseApp.mcpServers?.[0] ?? '';
-
-      const url = getAppUrl();
-
-      const searchParams = new URLSearchParams();
-      searchParams.set('resourceUri', gooseApp.uri);
-      searchParams.set('extensionName', extensionName);
-      searchParams.set('appName', gooseApp.name);
-      searchParams.set('workingDir', workingDir);
-
-      url.hash = `/standalone-app?${searchParams.toString()}`;
-      await appWindow.loadURL(formatUrl(url));
-      appWindow.show();
-    } catch (error) {
-      console.error('Failed to launch app:', error);
-      throw error;
-    }
-  });
-
-  ipcMain.handle('refresh-app', async (_event, gooseApp: GooseApp) => {
-    try {
-      const appWindow = appWindows.get(gooseApp.name);
-      if (!appWindow || appWindow.isDestroyed()) {
-        console.log(`App window for '${gooseApp.name}' not found or destroyed, skipping refresh`);
-        return;
-      }
-
-      // Bring to front first
-      if (appWindow.isMinimized()) {
-        appWindow.restore();
-      }
-      appWindow.show();
-      appWindow.focus();
-
-      // Then reload
-      await appWindow.webContents.reload();
-    } catch (error) {
-      console.error('Failed to refresh app:', error);
-      throw error;
-    }
-  });
-
-  ipcMain.handle('close-app', async (_event, appName: string) => {
-    try {
-      const appWindow = appWindows.get(appName);
-      if (!appWindow || appWindow.isDestroyed()) {
-        console.log(`App window for '${appName}' not found or destroyed, skipping close`);
-        return;
-      }
-
-      appWindow.close();
-    } catch (error) {
-      console.error('Failed to close app:', error);
-      throw error;
-    }
-  });
 }
 
 app.whenReady().then(async () => {

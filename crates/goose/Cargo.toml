@@ -126,11 +126,6 @@ goose-test-support = { path = "../goose-test-support" }
 name = "agent"
 path = "examples/agent.rs"
 
-[[example]]
-name = "databricks_oauth"
-path = "examples/databricks_oauth.rs"
-
-
 [[bin]]
 name = "build_canonical_models"
 path = "src/providers/canonical/build_canonical_models.rs"

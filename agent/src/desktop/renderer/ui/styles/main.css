@@ -1,0 +1,44 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@plugin "@tailwindcss/typography";
+
+@source "../../index.html";
+@source "../../**/*.{ts,tsx}";
+
+:root {
+  --background-default: #ffffff;
+  --background-muted: #f4f6f7;
+  --border-default: #e3e6ea;
+  --text-default: #32353b;
+  --text-muted: #606c7a;
+  --accent: #13bbaf;
+}
+
+.dark {
+  --background-default: #22252a;
+  --background-muted: #3f434b;
+  --border-default: #474e57;
+  --text-default: #ffffff;
+  --text-muted: #cbd1d6;
+  --accent: #13bbaf;
+}
+
+@theme inline {
+  --color-background-default: var(--background-default);
+  --color-background-muted: var(--background-muted);
+  --color-border-default: var(--border-default);
+  --color-text-default: var(--text-default);
+  --color-text-muted: var(--text-muted);
+  --color-accent: var(--accent);
+}
+
+@layer base {
+  * {
+    @apply border-border-default;
+  }
+
+  body {
+    @apply m-0 bg-background-default text-text-default;
+    font-family: "Segoe UI", "Noto Sans", sans-serif;
+  }
+}

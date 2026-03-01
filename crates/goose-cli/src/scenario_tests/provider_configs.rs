@@ -40,9 +40,8 @@ impl ProviderConfig {
     }
 }
 
-static PROVIDER_CONFIGS: LazyLock<Vec<ProviderConfig>> = LazyLock::new(|| {
-    vec![ProviderConfig::simple("openai", "gpt-4o")]
-});
+static PROVIDER_CONFIGS: LazyLock<Vec<ProviderConfig>> =
+    LazyLock::new(|| vec![ProviderConfig::simple("openai", "gpt-4o")]);
 
 pub fn get_provider_configs() -> Vec<&'static ProviderConfig> {
     PROVIDER_CONFIGS

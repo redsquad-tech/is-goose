@@ -1,20 +1,17 @@
 {
   "entry": [
     "src/server/index.ts",
-    "src/desktop/devProbe.ts",
     "scripts/vitest-notify-reporter.mjs",
     "forge.config.ts",
-    "src/desktop/main.ts",
-    "src/desktop/preload.ts",
-    "src/desktop/renderer/app.ts",
+    "src/desktop/renderer/main.tsx",
+    "src/desktop/renderer/index.html",
     "src/desktop/windowsPreflight.ts"
   ],
-  "ignore": [
-    "src/desktop/backend/mock-backend.mjs",
-    "src/desktop/resources/bin/mock-backend.mjs",
-    "vite.electron.main.config.ts",
-    "vite.electron.preload.config.ts",
-    "vite.electron.renderer.config.ts"
-  ],
-  "ignoreDependencies": ["vite"]
+  "project": ["src/**/*.ts", "src/**/*.tsx", "tests/**/*.ts", "tests/**/*.tsx"],
+  "ignore": [],
+  "ignoreDependencies": [
+    "@tailwindcss/typography",
+    "tailwindcss",
+    "tw-animate-css"
+  ]
 }

@@ -1,7 +1,7 @@
 # Issues-as-Code
 
 Issues-as-Code means tasks are stored as version-controlled Markdown files inside the repository.
-No external tracker. No parallel universe. If it's not in Git, it doesn't exist.
+No external tracker. No parallel universe. If it’s not in Git, it doesn’t exist.
 
 Issues live next to the code and follow the same lifecycle: create → review → implement → close.
 

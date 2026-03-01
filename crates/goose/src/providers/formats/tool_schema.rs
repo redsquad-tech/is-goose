@@ -94,9 +94,7 @@ fn collapse_nullable_type(obj: &mut serde_json::Map<String, Value>) {
         .map(str::to_string)
         .collect();
 
-    if non_null_types.len() == 1 {
-        *typ = Value::String(non_null_types.remove(0));
-    } else if non_null_types.len() > 1 {
+    if !non_null_types.is_empty() {
         *typ = Value::String(non_null_types.remove(0));
     } else {
         *typ = Value::String("string".to_string());

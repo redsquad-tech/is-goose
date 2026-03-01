@@ -1,4 +1,3 @@
-pub mod apps;
 pub mod chatrecall;
 pub mod ext_manager;
 pub mod summon;
@@ -32,19 +31,6 @@ pub static PLATFORM_EXTENSIONS: Lazy<HashMap<&'static str, PlatformExtensionDef>
                 default_enabled: true,
                 unprefixed_tools: false,
                 client_factory: |ctx| Box::new(todo::TodoClient::new(ctx).unwrap()),
-            },
-        );
-
-        map.insert(
-            apps::EXTENSION_NAME,
-            PlatformExtensionDef {
-                name: apps::EXTENSION_NAME,
-                display_name: "Apps",
-                description:
-                    "Create and manage custom Goose apps through chat. Apps are HTML/CSS/JavaScript and run in sandboxed windows.",
-                default_enabled: true,
-                unprefixed_tools: false,
-                client_factory: |ctx| Box::new(apps::AppsManagerClient::new(ctx).unwrap()),
             },
         );
 

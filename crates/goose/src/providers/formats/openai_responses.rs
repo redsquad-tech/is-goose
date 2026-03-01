@@ -867,7 +867,7 @@ mod tests {
     #[tokio::test]
     async fn test_responses_stream_with_sse_id_lines_via_sse_stream() -> anyhow::Result<()> {
         use futures::TryStreamExt;
-        use reqwest::bytes::Bytes;
+        use tokio_util::bytes::Bytes;
 
         let sse_wire = concat!(
             "id: 1\n",

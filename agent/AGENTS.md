@@ -63,6 +63,14 @@ The goal is requirement-level compatibility with a shorter, clearer, and easier-
 - Strict typing is mandatory; `any` is not allowed.
 - Prefer simple, expressive code and fail-fast behavior over defensive boilerplate.
 
+## Logging Policy
+- Runtime logs MUST use `src/logging/index.ts` (`createLogger`) instead of `console.*`.
+- Allowed levels: `debug`, `info`, `warn`, `error`.
+- `LOG_LEVEL` controls minimum emitted level, default is `info`.
+- Logs MUST be structured JSON and include `component` and `event`.
+- Sensitive fields (`secret`, `token`, `authorization`, `x-secret-key`, `password`, `api_key`) MUST be redacted.
+- Secret audit logs MUST NOT contain plaintext secret values or raw secret keys.
+
 ## Task management
 
 - use `tasks` skill to manage tasks
