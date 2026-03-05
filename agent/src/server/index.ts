@@ -1,6 +1,6 @@
 import pino from "pino";
 import { buildPinoOptions } from "../shared/pino.js";
-import { buildApp } from "./app.js";
+import { buildApp } from "./routes.js";
 
 const port = Number(process.env.PORT ?? "3001");
 const host = process.env.HOST ?? "127.0.0.1";

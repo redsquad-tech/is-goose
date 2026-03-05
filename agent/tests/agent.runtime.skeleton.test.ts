@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { runAgentCycle } from "../src/server/runtime/agent-cycle.machine.js";
-import { SessionManager } from "../src/server/runtime/session-manager.js";
-import { createSessionActor } from "../src/server/runtime/session.machine.js";
-import { ToolRouter } from "../src/server/runtime/tool-router.js";
+import {
+  SessionManager,
+  ToolRouter,
+  createSessionActor,
+  runAgentCycle,
+} from "../src/server/runtime.js";
 
 describe("MUST agent runtime skeleton requirements", () => {
   it("MUST provide deterministic state transitions", () => {

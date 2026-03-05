@@ -1,12 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { buildApp } from "../src/server/app.js";
-import { resolveResponse } from "../src/server/responder.js";
 import {
+  buildApp,
   loadSpec,
   pickSuccessStatus,
+  resolveResponse,
   toFastifyPath,
-} from "../src/server/spec.js";
+} from "../src/server/routes.js";
 
 type HttpMethod =
   | "get"

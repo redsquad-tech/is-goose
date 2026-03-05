@@ -1,23 +1,35 @@
+import fs from "node:fs";
+import path from "node:path";
+import swagger from "@fastify/swagger";
+import Fastify from "fastify";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import OpenAPISampler from "openapi-sampler";
 
 import type {
   components,
   operations,
-} from "../../shared/http/openapi.generated.js";
-import { resolveResponse } from "../responder.js";
-import { RuntimeRegistry } from "../runtime/registry.js";
-import { toSseStream } from "../runtime/reply-stream.js";
-import type { OpenAPISpec } from "../spec.js";
+} from "../shared/http/openapi.generated.js";
+import { RuntimeRegistry, toSseStream } from "./runtime.js";
 
-type HttpMethod = "get" | "post" | "delete";
-
-type RuntimeRouteOptions = {
-  app: FastifyInstance;
-  spec: OpenAPISpec;
-  secretKey: string;
-};
-
+const PUBLIC_PATHS = new Set(["/status", "/mcp-ui-proxy", "/mcp-app-proxy"]);
 const SEND_LOGS_COMMAND = "/send-logs";
+const specPath = path.resolve("docs/requirements/GOOSE_SERVER_OPENAPI.json");
+
+type OpenAPISpec = Record<string, unknown>;
+type JsonMap = Record<string, unknown>;
+type HttpMethod =
+  | "get"
+  | "post"
+  | "put"
+  | "patch"
+  | "delete"
+  | "head"
+  | "options"
+  | "trace";
+type OpenApiOperationObject = {
+  responses?: Record<string, unknown>;
+};
+type OpenApiPathItem = Partial<Record<HttpMethod, OpenApiOperationObject>>;
 
 const RUNTIME_ROUTES = [
   { method: "post", path: "/agent/start" },
@@ -37,13 +49,125 @@ const RUNTIME_ROUTES = [
   { method: "post", path: "/reply" },
 ] as const;
 
+const runtimeRouteSet = new Set(
+  RUNTIME_ROUTES.map((route) => `${route.method.toUpperCase()} ${route.path}`),
+);
+
 const asRecord = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+
+const isPublicPath = (pathValue: string): boolean =>
+  PUBLIC_PATHS.has(pathValue);
+
+export const loadSpec = (): OpenAPISpec => {
+  const raw = fs.readFileSync(specPath, "utf8");
+  return JSON.parse(raw) as OpenAPISpec;
+};
+
+export const toFastifyPath = (openApiPath: string): string =>
+  openApiPath.replaceAll(/\{([^}]+)\}/g, ":$1");
+
+export const pickSuccessStatus = (
+  responses: Record<string, unknown>,
+): number => {
+  const preferred = ["200", "201", "202", "204"];
+  for (const code of preferred) {
+    if (responses[code] !== undefined) {
+      return Number(code);
+    }
+  }
+
+  const first2xx = Object.keys(responses)
+    .filter((code) => /^2\d\d$/.test(code))
+    .sort()[0];
+
+  if (first2xx) {
+    return Number(first2xx);
+  }
+
+  return 200;
+};
+
+const pickContentType = (content: JsonMap): string | null => {
+  const preference = [
+    "application/json",
+    "text/plain",
+    "application/zip",
+    "text/event-stream",
+  ];
+
+  for (const type of preference) {
+    if (content[type] !== undefined) {
+      return type;
+    }
+  }
+
+  const first = Object.keys(content)[0];
+  return first ?? null;
+};
+
+const sampleFromSchema = (
+  schema: JsonMap | undefined,
+  spec: OpenAPISpec,
+): unknown => {
+  if (!schema) {
+    return {};
+  }
+  try {
+    return OpenAPISampler.sample(schema, {}, spec);
+  } catch {
+    return {};
+  }
+};
+
+const buildResponseBody = (
+  mediaTypeObject: JsonMap,
+  spec: OpenAPISpec,
+): unknown => {
+  if (mediaTypeObject.example !== undefined) {
+    return mediaTypeObject.example;
+  }
+
+  if (
+    mediaTypeObject.examples &&
+    typeof mediaTypeObject.examples === "object"
+  ) {
+    const first = Object.values(mediaTypeObject.examples as JsonMap)[0] as
+      | JsonMap
+      | undefined;
+    if (first?.value !== undefined) {
+      return first.value;
+    }
+  }
+
+  return sampleFromSchema(mediaTypeObject.schema as JsonMap | undefined, spec);
+};
+
+export const resolveResponse = (
+  operation: JsonMap,
+  statusCode: number,
+  spec: OpenAPISpec,
+): { statusCode: number; contentType: string | null; body: unknown } => {
+  const responses = (operation.responses ?? {}) as JsonMap;
+  const response = (responses[String(statusCode)] ??
+    responses.default ??
+    {}) as JsonMap;
+  const content = (response.content ?? {}) as JsonMap;
+  const contentType = pickContentType(content);
+
+  if (!contentType) {
+    return { statusCode, contentType: null, body: null };
+  }
+
+  const mediaTypeObject = content[contentType] as JsonMap;
+  const body = buildResponseBody(mediaTypeObject, spec);
+  return { statusCode, contentType, body };
+};
 
 const routeOperation = (
   spec: OpenAPISpec,
   openApiPath: string,
-  method: HttpMethod,
+  method: "get" | "post" | "delete",
 ): Record<string, unknown> => {
   const paths = asRecord(spec.paths);
   const pathItem = asRecord(paths[openApiPath]);
@@ -53,7 +177,7 @@ const routeOperation = (
 const sampleResponse = (
   spec: OpenAPISpec,
   openApiPath: string,
-  method: HttpMethod,
+  method: "get" | "post" | "delete",
   statusCode: number,
 ): { contentType: string | null; body: unknown } => {
   const operation = routeOperation(spec, openApiPath, method);
@@ -70,6 +194,10 @@ const withAuth = (
   reply: FastifyReply,
   secretKey: string,
 ): boolean => {
+  const routePath = request.routeOptions.url ?? "";
+  if (isPublicPath(routePath)) {
+    return true;
+  }
   const headerValue = request.headers["x-secret-key"];
   const token = Array.isArray(headerValue) ? headerValue[0] : headerValue;
   if (!token || token !== secretKey) {
@@ -128,15 +256,29 @@ const patchSessionBody = (
   };
 };
 
-export const runtimeRouteSet = new Set(
-  RUNTIME_ROUTES.map((route) => `${route.method.toUpperCase()} ${route.path}`),
-);
+const handleMcpUiProxy = (
+  request: FastifyRequest<{
+    Querystring: operations["mcp_ui_proxy"]["parameters"]["query"];
+  }>,
+  reply: FastifyReply,
+  secretKey: string,
+): void => {
+  if (!request.query.secret || request.query.secret !== secretKey) {
+    reply.code(401).send("Unauthorized");
+    return;
+  }
 
-export const registerRuntimeRoutes = ({
-  app,
-  spec,
-  secretKey,
-}: RuntimeRouteOptions): void => {
+  reply
+    .code(200)
+    .type("text/html")
+    .send("<!doctype html><html><body><h1>MCP UI Proxy</h1></body></html>");
+};
+
+const registerRuntimeRoutes = (
+  app: FastifyInstance,
+  spec: OpenAPISpec,
+  secretKey: string,
+): void => {
   const registry = new RuntimeRegistry({
     settingsDir: process.env.AGENT_CONFIG_DIR ?? process.cwd(),
   });
@@ -449,4 +591,119 @@ export const registerRuntimeRoutes = ({
     }
     reply.code(200).type("text/event-stream").send(toSseStream(result.data));
   });
+};
+
+const registerOpenApiFallbackRoutes = (
+  spec: OpenAPISpec,
+  app: FastifyInstance,
+  secretKey: string,
+): void => {
+  const paths = (spec.paths ?? {}) as Record<string, OpenApiPathItem>;
+
+  for (const [openApiPath, pathItem] of Object.entries(paths)) {
+    for (const [method, operation] of Object.entries(pathItem)) {
+      if (
+        ![
+          "get",
+          "post",
+          "put",
+          "patch",
+          "delete",
+          "head",
+          "options",
+          "trace",
+        ].includes(method)
+      ) {
+        continue;
+      }
+      if (!operation) {
+        continue;
+      }
+
+      const fastifyPath = toFastifyPath(openApiPath);
+      const key = `${method.toUpperCase()} ${fastifyPath}`;
+      if (runtimeRouteSet.has(key)) {
+        continue;
+      }
+      app.route({
+        method: method.toUpperCase() as
+          | "GET"
+          | "POST"
+          | "PUT"
+          | "PATCH"
+          | "DELETE"
+          | "HEAD"
+          | "OPTIONS"
+          | "TRACE",
+        url: fastifyPath,
+        preHandler: async (request, reply) => {
+          if (!withAuth(request, reply, secretKey)) {
+            return;
+          }
+        },
+        handler: async (
+          request: FastifyRequest,
+          reply: FastifyReply,
+        ): Promise<void> => {
+          if (openApiPath === "/mcp-ui-proxy" && method === "get") {
+            handleMcpUiProxy(
+              request as FastifyRequest<{
+                Querystring: operations["mcp_ui_proxy"]["parameters"]["query"];
+              }>,
+              reply,
+              secretKey,
+            );
+            return;
+          }
+
+          const statusCode = pickSuccessStatus(operation.responses ?? {});
+          const resolved = resolveResponse(
+            operation as Record<string, unknown>,
+            statusCode,
+            spec,
+          );
+          if (resolved.statusCode === 204) {
+            reply.code(204).send();
+            return;
+          }
+
+          if (resolved.contentType) {
+            reply.type(resolved.contentType);
+          }
+
+          if (resolved.contentType === "application/zip") {
+            reply.code(resolved.statusCode).send(Buffer.from("PK\x03\x04"));
+            return;
+          }
+
+          reply.code(resolved.statusCode).send(resolved.body);
+        },
+      });
+    }
+  }
+};
+
+const registerRoutes = (
+  app: FastifyInstance,
+  spec: OpenAPISpec,
+  secretKey: string,
+): void => {
+  registerRuntimeRoutes(app, spec, secretKey);
+  registerOpenApiFallbackRoutes(spec, app, secretKey);
+};
+
+export const buildApp = (): ReturnType<typeof Fastify> => {
+  const app = Fastify({ logger: false });
+  const spec = loadSpec();
+  const secretKey = process.env.SERVER_SECRET_KEY ?? "dev-secret";
+
+  void app.register(swagger, {
+    mode: "dynamic",
+    openapi: spec as never,
+  });
+
+  app.get("/openapi.json", async () => spec);
+  registerRoutes(app, spec, secretKey);
+
+  return app;
 };
