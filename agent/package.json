@@ -4,7 +4,7 @@
   "main": "dist-electron/main.js",
   "scripts": {
     "openapi:types": "node scripts/generate-openapi-types.mjs",
-    "dev": "concurrently -k -n server,electron,test -c cyan,green,magenta \"vite build --watch --config vite.server.config.ts\" \"electron-vite dev\" \"vitest --watch --reporter=default --reporter=./scripts/vitest-notify-reporter.mjs\"",
+    "dev": "concurrently -k -n server,electron,test -c cyan,green,magenta \"vite build --watch --config vite.server.config.ts\" \"electron-vite dev -- --no-sandbox --disable-setuid-sandbox\" \"vitest --watch --reporter=default --reporter=./scripts/vitest-notify-reporter.mjs\"",
     "build:desktop": "vite build --config vite.server.config.ts && electron-vite build",
     "desktop:dev": "npm run dev",
     "desktop:make:mac": "npm run icons:build && npm run test && electron-builder --mac",
